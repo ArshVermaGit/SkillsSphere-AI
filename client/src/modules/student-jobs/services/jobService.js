@@ -34,3 +34,12 @@ export const applyToJob = async (jobId, token, options = {}) => {
     token,
   });
 };
+
+/**
+ * Get current student's applied job IDs
+ * @param {string} token - Auth token
+ * @returns {Promise<Object>} - API response with appliedJobIds array
+ */
+export const getMyAppliedJobIds = async (token) => {
+  return apiRequest("/api/jobs/my-applications", { token });
+};

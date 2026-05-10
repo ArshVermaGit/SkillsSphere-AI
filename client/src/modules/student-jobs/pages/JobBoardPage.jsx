@@ -8,7 +8,7 @@ import EmptyState from "../../../shared/components/EmptyState";
 import { JobViewerCard } from "../../../shared/components";
 import JobFilters from "../components/JobFilters";
 import JobApplyForm from "../components/JobApplyForm";
-import { getJobs, applyToJob } from "../services/jobService";
+import { getJobs, applyToJob, getMyAppliedJobIds } from "../services/jobService";
 
 const JobBoardPage = () => {
   const { token, user } = useSelector((state) => state.auth);
@@ -26,6 +26,14 @@ const JobBoardPage = () => {
     try {
       const response = await getJobs(currentFilters, token);
       setJobs(response.jobs || []);
+
+      // Fetch applied status separately — don't block job loading if it fails
+      try {
+        const appliedResponse = await getMyAppliedJobIds(token);
+        setAppliedJobIds(new Set(appliedResponse.appliedJobIds || []));
+      } catch {
+        // Silently ignore — applied status will update after next apply
+      }
     } catch (err) {
       setError(err.message || "Failed to fetch jobs. Please try again.");
     } finally {

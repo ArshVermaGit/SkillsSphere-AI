@@ -11,7 +11,6 @@ const Navbar = () => {
   const navigate = useNavigate();
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'dark';
@@ -68,8 +67,8 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 w-full z-[1000] transition-all duration-300
       ${scrolled
-        ? 'py-4 bg-[var(--nav-bg)] backdrop-blur-xl border-b border-[var(--border)] shadow-[var(--shadow-soft)]'
-        : 'py-6 bg-transparent'
+        ? 'py-4 bg-[var(--nav-bg)] backdrop-blur-xl border-b border-[var(--border)] shadow-[0_8px_24px_rgba(0,0,0,0.12)]'
+        : 'py-6 bg-transparent border-b border-transparent'
       }
       ${isMenuOpen ? '' : ''}
       max-sm:py-3`}>
@@ -80,8 +79,8 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden lg:flex gap-10">
-          {navLinks.map((link) => (
+        <div className="hidden lg:flex gap-10 items-center">
+          {navLinks.filter(link => link.name !== 'Dashboard').map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -99,7 +98,7 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden lg:flex gap-5 items-center relative">
+        <div className="hidden lg:flex gap-5 items-center">
           <button
             type="button"
             onClick={toggleTheme}
@@ -109,60 +108,17 @@ const Navbar = () => {
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          {isAuthenticated ? (
-            <div className="relative">
-              <button 
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-3 hover:bg-[var(--surface-hover)] p-2 rounded-xl transition-colors duration-200"
-              >
-                <div className="w-9 h-9 rounded-full bg-[var(--surface-soft)] flex items-center justify-center text-[var(--primary)] font-bold border border-[var(--border)]">
-                  {user?.name?.charAt(0).toUpperCase() || <User size={18} />}
-                </div>
-                <div className="text-left hidden xl:block">
-                  <p className="text-sm font-medium text-[var(--text-main)]">{user?.name || 'User'}</p>
-                </div>
-                <ChevronDown size={16} className={`text-[var(--text-muted)] transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-56 bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow-soft)] rounded-xl py-2 z-[1002] animate-[slideFadeIn_0.2s_ease_forwards]">
-                  <div className="px-4 py-3 border-b border-[var(--border)] mb-2">
-                    <p className="text-sm font-medium text-[var(--text-main)] truncate">{user?.name || 'User'}</p>
-                    <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">{user?.email}</p>
-                  </div>
-                  <Link 
-                    to="/dashboard" 
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--surface-hover)] transition-colors"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <LayoutDashboard size={18} />
-                    Dashboard
-                  </Link>
-                  {user?.role === 'student' && (
-                    <Link 
-                      to="/my-applications" 
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--surface-hover)] transition-colors"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <Briefcase size={18} />
-                      Applied Jobs
-                    </Link>
-                  )}
-                  <button 
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:text-red-400 hover:bg-red-400/10 transition-colors mt-1 border-t border-[var(--border)] pt-3"
-                  >
-                    <LogOut size={18} />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" to="/login">Login</Button>
-              <Button variant="primary" size="sm" to="/register">Get Started</Button>
-            </>
+          {isAuthenticated && (
+            <Link 
+              to="/dashboard"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] text-[var(--primary)] font-bold shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[var(--surface-hover)]"
+              title={`Go to Dashboard - ${user?.name}`}
+            >
+              {user?.name?.charAt(0).toUpperCase() || <User size={18} />}
+            </Link>
+          )}
+          {!isAuthenticated && (
+            <Button variant="ghost" size="sm" to="/login">Login</Button>
           )}
         </div>
 

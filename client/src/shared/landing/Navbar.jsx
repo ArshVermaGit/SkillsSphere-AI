@@ -138,6 +138,14 @@ const Navbar = () => {
                     <LayoutDashboard size={18} />
                     Dashboard
                   </Link>
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--surface-hover)] transition-colors"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <User size={18} />
+                    Profile
+                  </Link>
                   {user?.role === 'student' && (
                     <Link 
                       to="/my-applications" 
@@ -265,6 +273,9 @@ const Navbar = () => {
                 </div>
                 <Button variant="primary" size="lg" to="/dashboard" className="w-full justify-center">
                   Go to Dashboard
+                </Button>
+                <Button variant="outline" size="lg" to="/profile" className="w-full justify-center border-[var(--border)] text-[var(--text-main)] hover:bg-[var(--surface-hover)]">
+                  <User size={20} /> View Profile
                 </Button>
                 <Button variant="ghost" size="lg" onClick={handleLogout} className="w-full justify-center text-red-400 hover:text-red-300 hover:bg-red-400/10">
                   <LogOut size={20} /> Logout

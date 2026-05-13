@@ -23,6 +23,7 @@ import JobBoardPage from "../modules/student-jobs/pages/JobBoardPage";
 import MyApplicationsPage from "../modules/student-jobs/pages/MyApplicationsPage";
 import ClassroomsDashboard from "../modules/classrooms/pages/ClassroomsDashboard";
 import ClassroomRoom from "../modules/classrooms/pages/ClassroomRoom";
+import InterviewLobby from "../modules/mock-interview/pages/InterviewLobby";
 import ProtectedRoute from "../shared/components/ProtectedRoute";
 import ThemeToggle from "../shared/components/ThemeToggle";
 function App() {
@@ -135,6 +136,16 @@ function App() {
           element={
             <ProtectedRoute>
               <ClassroomRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Mock Interview */}
+        <Route
+          path="/mock-interview"
+          element={
+            <ProtectedRoute requiredRole="student">
+              <InterviewLobby />
             </ProtectedRoute>
           }
         />

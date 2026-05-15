@@ -206,5 +206,165 @@
     "questionText": "What are stacks and queues? Give real-world examples of each.",
     "expectedAnswer": "A stack is a LIFO (Last In First Out) data structure — push and pop from the top. Examples: browser back button (history stack), undo operations in editors, function call stack. A queue is a FIFO (First In First Out) data structure — enqueue at the back, dequeue from the front. Examples: printer job queue, request handling in web servers, BFS algorithm. Both have O(1) push/pop and enqueue/dequeue operations.",
     "expectedConcepts": ["stack", "queue", "lifo", "fifo", "push", "pop", "enqueue", "dequeue"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "rendering",
+    "difficulty": "easy",
+    "questionText": "What is conditional rendering in React?",
+    "expectedAnswer": "Conditional rendering lets you render different UI elements based on conditions, similar to JavaScript if statements. You can use ternary operators, logical && operator, or if/else blocks inside JSX to show or hide components. Common patterns include rendering loading spinners while data fetches, showing error messages, or displaying different views based on user authentication status.",
+    "expectedConcepts": ["conditional-rendering", "ternary", "jsx", "logical-operators"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "lists",
+    "difficulty": "easy",
+    "questionText": "Why do we need keys in React lists?",
+    "expectedAnswer": "Keys help React identify which items in a list have changed, been added, or removed. They should be unique and stable identifiers, not array indices. React uses keys during reconciliation to match elements between renders efficiently. Without proper keys, React may re-render all items unnecessarily or cause bugs with component state when items are reordered or filtered.",
+    "expectedConcepts": ["keys", "lists", "reconciliation", "unique-identifiers", "performance"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "hooks",
+    "difficulty": "medium",
+    "questionText": "When would you use useCallback and useMemo?",
+    "expectedAnswer": "useCallback memoizes a function reference so it doesn't get recreated on every render — useful when passing callbacks to child components that rely on referential equality (like with React.memo). useMemo memoizes the result of an expensive computation. Both take a dependency array and only recompute when dependencies change. Overusing them can hurt performance due to the overhead of memoization itself.",
+    "expectedConcepts": ["useCallback", "useMemo", "memoization", "referential-equality", "performance", "dependency-array"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "error-handling",
+    "difficulty": "medium",
+    "questionText": "What are error boundaries in React?",
+    "expectedAnswer": "Error boundaries are React components that catch JavaScript errors in their child component tree, log them, and display a fallback UI instead of crashing the entire app. They use componentDidCatch and getDerivedStateFromError lifecycle methods. They only catch errors during rendering, not in event handlers or async code. As of now, they must be class components — there is no hook equivalent.",
+    "expectedConcepts": ["error-boundaries", "componentDidCatch", "getDerivedStateFromError", "fallback-ui", "class-components"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "performance",
+    "difficulty": "hard",
+    "questionText": "How does React Fiber architecture improve rendering?",
+    "expectedAnswer": "React Fiber is the reimplementation of React's core reconciliation algorithm introduced in React 16. It breaks rendering work into small units called fibers, enabling incremental rendering. This allows React to pause, abort, or prioritize work — making the UI responsive even during heavy updates. Fiber supports concurrent features like Suspense and time-slicing, where high-priority updates (like user input) can interrupt lower-priority ones (like data fetching).",
+    "expectedConcepts": ["fiber", "reconciliation", "incremental-rendering", "concurrent-mode", "suspense", "time-slicing", "priority"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "fundamentals",
+    "difficulty": "easy",
+    "questionText": "What is the difference between require and import in Node.js?",
+    "expectedAnswer": "require is the CommonJS module system — it loads modules synchronously at runtime and uses module.exports for exports. import is the ES Module syntax — it supports static analysis, tree-shaking, and is asynchronous. In Node.js, ES modules require either .mjs extension or 'type: module' in package.json. require can be used conditionally inside functions, while import statements must be at the top level (except dynamic import()).",
+    "expectedConcepts": ["commonjs", "es-modules", "require", "import", "tree-shaking", "module-exports"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "fundamentals",
+    "difficulty": "easy",
+    "questionText": "What is the purpose of package.json in a Node.js project?",
+    "expectedAnswer": "package.json is the manifest file for a Node.js project. It contains metadata like project name, version, and description. It lists dependencies (production and dev), defines scripts for tasks like testing and building, specifies the entry point, and configures module type. npm uses it to install correct packages, manage versions with semver, and share the project reproducibly using the lockfile.",
+    "expectedConcepts": ["package-json", "dependencies", "scripts", "semver", "npm", "entry-point"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "express",
+    "difficulty": "medium",
+    "questionText": "Explain how middleware works in Express.js.",
+    "expectedAnswer": "Middleware functions have access to the request, response, and next function. They execute in order and can modify req/res objects, end the request-response cycle, or call next() to pass control to the next middleware. Types include application-level (app.use), router-level, error-handling (4 params), built-in (express.json), and third-party (cors, helmet). They form a pipeline where each function can process or transform the request before it reaches the route handler.",
+    "expectedConcepts": ["middleware", "request", "response", "next", "pipeline", "app-use", "error-handling"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "async",
+    "difficulty": "medium",
+    "questionText": "What is the difference between process.nextTick() and setImmediate()?",
+    "expectedAnswer": "process.nextTick() executes the callback at the end of the current operation, before the event loop continues — it has the highest priority among async callbacks. setImmediate() executes in the check phase of the next event loop iteration. nextTick can starve the event loop if called recursively, while setImmediate is safer for deferring work. In practice, nextTick is used for error handling and ensuring callbacks run before I/O, while setImmediate is for non-urgent deferred execution.",
+    "expectedConcepts": ["process-nextTick", "setImmediate", "event-loop", "check-phase", "microtask", "priority"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "security",
+    "difficulty": "hard",
+    "questionText": "How do you prevent common security vulnerabilities in a Node.js API?",
+    "expectedAnswer": "Key practices include: input validation and sanitization to prevent injection attacks, using parameterized queries for SQL/NoSQL injection prevention, implementing rate limiting to prevent brute force and DDoS, using helmet middleware for HTTP security headers, enabling CORS properly, hashing passwords with bcrypt, using JWT with short expiry for authentication, preventing XSS by escaping output, and keeping dependencies updated to patch known vulnerabilities.",
+    "expectedConcepts": ["input-validation", "injection-prevention", "rate-limiting", "helmet", "cors", "bcrypt", "jwt", "xss"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "arrays",
+    "difficulty": "easy",
+    "questionText": "What is the difference between an array and a linked list?",
+    "expectedAnswer": "Arrays store elements in contiguous memory, allowing O(1) random access by index but O(n) insertion/deletion in the middle. Linked lists store elements in nodes with pointers, allowing O(1) insertion/deletion when you have a reference to the node but O(n) access since you must traverse from the head. Arrays have better cache locality. Linked lists use more memory due to pointer storage but don't need contiguous memory allocation.",
+    "expectedConcepts": ["array", "linked-list", "contiguous-memory", "random-access", "insertion", "deletion", "cache-locality"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "searching",
+    "difficulty": "easy",
+    "questionText": "Explain how binary search works and when you can use it.",
+    "expectedAnswer": "Binary search finds a target value in a sorted array by repeatedly dividing the search interval in half. Compare the target with the middle element — if smaller, search the left half; if larger, search the right half. Time complexity is O(log n), much faster than linear search O(n). It requires the array to be sorted. Variations include finding first/last occurrence, searching in rotated arrays, and finding insertion position.",
+    "expectedConcepts": ["binary-search", "sorted-array", "divide-and-conquer", "logarithmic", "time-complexity"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "trees",
+    "difficulty": "medium",
+    "questionText": "What is a Binary Search Tree and what are its key operations?",
+    "expectedAnswer": "A BST is a binary tree where each node's left subtree contains only values less than the node, and the right subtree contains only values greater. Key operations: search, insert, delete — all O(h) where h is height. In a balanced BST, h = log n giving O(log n) operations. In worst case (skewed tree), h = n giving O(n). Self-balancing variants like AVL and Red-Black trees maintain O(log n) by rebalancing after modifications.",
+    "expectedConcepts": ["bst", "binary-tree", "search", "insert", "delete", "balanced", "avl", "time-complexity"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "graphs",
+    "difficulty": "medium",
+    "questionText": "Explain BFS and DFS traversal algorithms.",
+    "expectedAnswer": "BFS (Breadth-First Search) explores all neighbors at the current depth before moving deeper — uses a queue, finds shortest path in unweighted graphs. DFS (Depth-First Search) explores as far as possible along each branch before backtracking — uses a stack or recursion, useful for topological sorting and cycle detection. BFS has O(V+E) time and O(V) space for the queue. DFS has O(V+E) time and O(V) space for the recursion stack.",
+    "expectedConcepts": ["bfs", "dfs", "queue", "stack", "shortest-path", "topological-sort", "graph-traversal"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "sorting",
+    "difficulty": "hard",
+    "questionText": "Compare merge sort and quick sort in terms of time complexity, space, and stability.",
+    "expectedAnswer": "Merge sort: always O(n log n) time, O(n) extra space, stable (preserves order of equal elements). Uses divide-and-conquer by splitting array in half, sorting each half, and merging. Quick sort: average O(n log n) but worst case O(n²) with bad pivot, O(log n) space (in-place), unstable. Faster in practice due to cache locality. Quick sort is preferred for arrays, merge sort for linked lists. Both use divide-and-conquer strategy.",
+    "expectedConcepts": ["merge-sort", "quick-sort", "time-complexity", "space-complexity", "stability", "divide-and-conquer", "pivot"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "hashing",
+    "difficulty": "hard",
+    "questionText": "How do hash tables handle collisions? Compare different strategies.",
+    "expectedAnswer": "Hash collisions occur when two keys hash to the same index. Chaining: each bucket stores a linked list of entries — simple but uses extra memory. Open addressing: finds another slot using probing — linear probing (check next slot), quadratic probing (check i² slots away), or double hashing. Chaining handles high load factors better. Open addressing has better cache performance. Both degrade to O(n) in worst case but average O(1) for lookups with a good hash function and low load factor.",
+    "expectedConcepts": ["hash-table", "collision", "chaining", "open-addressing", "linear-probing", "load-factor", "hash-function"]
+  },
+  {
+    "topic": "dsa",
+    "subtopic": "greedy",
+    "difficulty": "hard",
+    "questionText": "What are greedy algorithms? When do they give optimal solutions?",
+    "expectedAnswer": "Greedy algorithms make the locally optimal choice at each step, hoping to find a global optimum. They work when a problem has the greedy choice property (local optimal leads to global optimal) and optimal substructure. Examples include Huffman coding, Dijkstra's algorithm, and activity selection. They don't work for all problems — the knapsack problem requires dynamic programming. Proving greedy correctness usually requires an exchange argument or showing the greedy stays ahead.",
+    "expectedConcepts": ["greedy", "optimal-substructure", "greedy-choice-property", "huffman", "dijkstra", "activity-selection"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "fundamentals",
+    "difficulty": "easy",
+    "questionText": "What is npm and how does it differ from npx?",
+    "expectedAnswer": "npm (Node Package Manager) is used to install, manage, and publish packages. It downloads packages to node_modules and records them in package.json. npx is a package runner that comes with npm 5.2+. It executes packages without installing them globally — useful for one-time commands like create-react-app or running project-local binaries. npx checks local node_modules first, then falls back to remote registry.",
+    "expectedConcepts": ["npm", "npx", "package-manager", "node-modules", "package-json", "global-install"]
+  },
+  {
+    "topic": "nodejs",
+    "subtopic": "performance",
+    "difficulty": "hard",
+    "questionText": "What are Worker Threads in Node.js and when should you use them?",
+    "expectedAnswer": "Worker Threads allow running JavaScript in parallel threads, unlike the single-threaded event loop. They are useful for CPU-intensive tasks like image processing, data compression, or complex calculations that would block the event loop. Each worker has its own V8 instance and event loop. They communicate with the main thread via message passing using postMessage and SharedArrayBuffer for shared memory. They differ from child processes by sharing memory and being lighter weight.",
+    "expectedConcepts": ["worker-threads", "cpu-intensive", "parallel", "event-loop", "message-passing", "shared-memory"]
+  },
+  {
+    "topic": "react",
+    "subtopic": "components",
+    "difficulty": "easy",
+    "questionText": "What is the difference between controlled and uncontrolled components?",
+    "expectedAnswer": "Controlled components have their form data handled by React state — the input value is set via state and changes through onChange handlers. This gives React full control over the form data. Uncontrolled components store form data in the DOM itself, accessed via refs. Controlled components are preferred for validation, conditional disabling, and enforcing input formats. Uncontrolled components are simpler and useful for file inputs or integrating with non-React code.",
+    "expectedConcepts": ["controlled-components", "uncontrolled-components", "state", "refs", "forms", "onChange"]
   }
 ]

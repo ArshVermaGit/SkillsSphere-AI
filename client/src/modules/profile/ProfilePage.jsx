@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import ProfileSkeleton from "./components/ProfileSkeleton";
 import {
   User,
   Mail,
@@ -27,13 +28,22 @@ import Button from "../../shared/components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { updateUserProfile, logout } from "../../features/auth/authSlice";
-import { updateProfile, deleteProfile, uploadAvatar, removeAvatar } from "./services/profileService";
+import {
+  updateProfile,
+  deleteProfile,
+  uploadAvatar,
+  removeAvatar,
+} from "./services/profileService";
 import LoadingState from "../../shared/components/LoadingState";
 import { getProtectedAssetUrl } from "../../utils/protectedAssetUrl";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLE_LABELS = { student: "Student", tutor: "Tutor", recruiter: "Recruiter" };
+const ROLE_LABELS = {
+  student: "Student",
+  tutor: "Tutor",
+  recruiter: "Recruiter",
+};
 
 const ROLE_CONFIG = {
   student: {
@@ -63,9 +73,9 @@ const ROLE_CONFIG = {
 };
 
 const TABS = [
-  { id: "info",     label: "Profile Info",   icon: <User size={15} /> },
-  { id: "account",  label: "Account",        icon: <Info size={15} /> },
-  { id: "security", label: "Security",       icon: <Lock size={15} /> },
+  { id: "info", label: "Profile Info", icon: <User size={15} /> },
+  { id: "account", label: "Account", icon: <Info size={15} /> },
+  { id: "security", label: "Security", icon: <Lock size={15} /> },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -73,7 +83,9 @@ const TABS = [
 function formatDate(iso) {
   if (!iso) return "—";
   return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric", month: "long", day: "numeric",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 }
 
@@ -89,38 +101,62 @@ function timeAgo(iso) {
 }
 
 function getInitials(name = "") {
-  return name.trim().split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  return name
+    .trim()
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const InfoRow = ({ icon, label, value, action }) => (
   <div className="flex items-start gap-3 py-3.5 border-b border-slate-100 dark:border-white/5 last:border-0">
-    <span className="mt-0.5 flex-shrink-0 text-slate-400 dark:text-slate-500 w-4 h-4">{icon}</span>
+    <span className="mt-0.5 flex-shrink-0 text-slate-400 dark:text-slate-500 w-4 h-4">
+      {icon}
+    </span>
     <div className="flex-1 min-w-0">
-      <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">{label}</p>
-      <div className="text-sm text-slate-700 dark:text-slate-200 break-words">{value}</div>
+      <p className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+        {label}
+      </p>
+      <div className="text-sm text-slate-700 dark:text-slate-200 break-words">
+        {value}
+      </div>
     </div>
     {action && <div className="flex-shrink-0">{action}</div>}
   </div>
 );
 
 const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border bg-white dark:bg-slate-900/70 border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_30px_rgba(0,0,0,0.4)] backdrop-blur-sm ${className}`}>
+  <div
+    className={`rounded-2xl border bg-white dark:bg-slate-900/70 border-slate-200 dark:border-white/10 shadow-sm dark:shadow-[0_0_30px_rgba(0,0,0,0.4)] backdrop-blur-sm ${className}`}
+  >
     {children}
   </div>
 );
 
 const SectionTitle = ({ children }) => (
-  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">{children}</h3>
+  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">
+    {children}
+  </h3>
 );
 
 const StatCard = ({ icon, label, value, sub }) => (
   <div className="flex flex-col gap-1 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5">
     <span className="text-slate-400 dark:text-slate-500 mb-1">{icon}</span>
-    <span className="text-xl font-bold text-slate-800 dark:text-white">{value}</span>
-    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
-    {sub && <span className="text-[11px] text-slate-400 dark:text-slate-500">{sub}</span>}
+    <span className="text-xl font-bold text-slate-800 dark:text-white">
+      {value}
+    </span>
+    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+      {label}
+    </span>
+    {sub && (
+      <span className="text-[11px] text-slate-400 dark:text-slate-500">
+        {sub}
+      </span>
+    )}
   </div>
 );
 
@@ -132,13 +168,30 @@ const DeleteModal = ({ onConfirm, onCancel, loading }) => (
       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-500/10 mx-auto mb-4">
         <Trash2 size={22} className="text-red-500" />
       </div>
-      <h3 className="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">Delete Account</h3>
+      <h3 className="text-lg font-bold text-center text-slate-800 dark:text-white mb-2">
+        Delete Account
+      </h3>
       <p className="text-sm text-center text-slate-500 dark:text-slate-400 mb-6">
-        This will permanently delete your account and all associated data. This action <strong>cannot be undone</strong>.
+        This will permanently delete your account and all associated data. This
+        action <strong>cannot be undone</strong>.
       </p>
       <div className="flex gap-3">
-        <Button variant="outline" fullWidth onClick={onCancel} disabled={loading}>Cancel</Button>
-        <Button variant="danger" fullWidth onClick={onConfirm} loading={loading}>Yes, Delete</Button>
+        <Button
+          variant="outline"
+          fullWidth
+          onClick={onCancel}
+          disabled={loading}
+        >
+          Cancel
+        </Button>
+        <Button
+          variant="danger"
+          fullWidth
+          onClick={onConfirm}
+          loading={loading}
+        >
+          Yes, Delete
+        </Button>
       </div>
     </div>
   </div>
@@ -146,7 +199,15 @@ const DeleteModal = ({ onConfirm, onCancel, loading }) => (
 
 // ─── Avatar Editor ────────────────────────────────────────────────────────────
 
-const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditing, token }) => {
+const AvatarEditor = ({
+  user,
+  roleConfig,
+  onUpload,
+  onRemove,
+  uploading,
+  isEditing,
+  token,
+}) => {
   const fileRef = useRef(null);
   const [preview, setPreview] = useState(null);
   const [pendingFile, setPendingFile] = useState(null);
@@ -208,11 +269,13 @@ const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditi
 
   return (
     <div className="flex flex-col items-center gap-3">
-
       {/* Avatar circle */}
       <div className="relative group">
         <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           className={`relative w-28 h-28 rounded-2xl transition-all duration-200
@@ -224,10 +287,15 @@ const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditi
             className={`w-28 h-28 rounded-2xl bg-gradient-to-br ${roleConfig.avatar} flex items-center justify-center text-white text-3xl font-bold border-4 border-white dark:border-slate-900 shadow-xl select-none overflow-hidden`}
             style={{ boxShadow: `0 0 28px ${roleConfig.glow}` }}
           >
-            {displayPic
-              ? <img src={displayPic} alt={user.name} className="w-full h-full object-cover" />
-              : initials
-            }
+            {displayPic ? (
+              <img
+                src={displayPic}
+                alt={user.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              initials
+            )}
           </div>
 
           {/* Uploading spinner */}
@@ -252,15 +320,19 @@ const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditi
         </div>
 
         {/* X remove badge — only in edit mode with a saved photo */}
-        {isEditing && user.profilePic && !hasPendingChange && !uploading && !justSaved && (
-          <button
-            onClick={handleRemove}
-            title="Remove photo"
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors z-10"
-          >
-            <X size={12} />
-          </button>
-        )}
+        {isEditing &&
+          user.profilePic &&
+          !hasPendingChange &&
+          !uploading &&
+          !justSaved && (
+            <button
+              onClick={handleRemove}
+              title="Remove photo"
+              className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors z-10"
+            >
+              <X size={12} />
+            </button>
+          )}
       </div>
 
       {/* ── State-based action area — only visible in edit mode ── */}
@@ -292,7 +364,9 @@ const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditi
 
       {/* 2. Uploading */}
       {isEditing && !hasPendingChange && uploading && (
-        <p className="text-xs text-slate-400 dark:text-slate-500 animate-pulse">Saving photo…</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 animate-pulse">
+          Saving photo…
+        </p>
       )}
 
       {/* 3. Just saved — success message only, no buttons */}
@@ -303,37 +377,45 @@ const AvatarEditor = ({ user, roleConfig, onUpload, onRemove, uploading, isEditi
       )}
 
       {/* 4. Idle with saved photo — Change / Remove */}
-      {isEditing && !hasPendingChange && !uploading && !justSaved && user.profilePic && (
-        <div className="flex gap-2">
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition-colors"
-          >
-            <Camera size={12} /> Change Photo
-          </button>
-          <button
-            onClick={handleRemove}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-white/10 transition-colors"
-          >
-            <ImageOff size={12} /> Remove
-          </button>
-        </div>
-      )}
+      {isEditing &&
+        !hasPendingChange &&
+        !uploading &&
+        !justSaved &&
+        user.profilePic && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+            >
+              <Camera size={12} /> Change Photo
+            </button>
+            <button
+              onClick={handleRemove}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 border border-slate-200 dark:border-white/10 transition-colors"
+            >
+              <ImageOff size={12} /> Remove
+            </button>
+          </div>
+        )}
 
       {/* 5. Idle with no photo — Upload + hint */}
-      {isEditing && !hasPendingChange && !uploading && !justSaved && !user.profilePic && (
-        <>
-          <button
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition-colors"
-          >
-            <Upload size={12} /> Upload Photo
-          </button>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
-            JPG, PNG, WebP or GIF · Max 3 MB · Drag & drop supported
-          </p>
-        </>
-      )}
+      {isEditing &&
+        !hasPendingChange &&
+        !uploading &&
+        !justSaved &&
+        !user.profilePic && (
+          <>
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white transition-colors"
+            >
+              <Upload size={12} /> Upload Photo
+            </button>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
+              JPG, PNG, WebP or GIF · Max 3 MB · Drag & drop supported
+            </p>
+          </>
+        )}
 
       <input
         ref={fileRef}
@@ -384,7 +466,9 @@ const ProfilePage = () => {
       URL.revokeObjectURL(blobUrl); // free memory
     } catch (err) {
       // Rollback — restore previous profilePic on failure
-      dispatch(updateUserProfile({ ...user, profilePic: user.profilePic ?? null }));
+      dispatch(
+        updateUserProfile({ ...user, profilePic: user.profilePic ?? null }),
+      );
       URL.revokeObjectURL(blobUrl);
       setAvatarError(err.message || "Failed to upload photo");
     } finally {
@@ -432,18 +516,25 @@ const ProfilePage = () => {
     const errs = {};
     const trimmed = formData.name.trim();
     if (!trimmed) errs.name = "Name cannot be empty";
-    else if (trimmed.length < 2) errs.name = "Name must be at least 2 characters";
+    else if (trimmed.length < 2)
+      errs.name = "Name must be at least 2 characters";
     return errs;
   };
 
   const handleSave = async (e) => {
     e?.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+      return;
+    }
     setIsSaving(true);
     try {
       setApiError("");
-      const response = await updateProfile({ name: formData.name.trim() }, token);
+      const response = await updateProfile(
+        { name: formData.name.trim() },
+        token,
+      );
       dispatch(updateUserProfile(response.user));
       setSaveSuccess(true);
       setIsEditing(false);
@@ -478,8 +569,8 @@ const ProfilePage = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] flex items-center justify-center">
-        <LoadingState message="Loading profile..." />
+      <div className="min-h-screen bg-white dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] p-3 sm:p-5 pt-20 sm:pt-28">
+        <ProfileSkeleton />
       </div>
     );
   }
@@ -499,8 +590,13 @@ const ProfilePage = () => {
   );
 
   const roleBadge = (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleConfig.light} dark:${roleConfig.dark.replace("dark:", "")}`}
-      style={{ /* fallback for dark mode since Tailwind can't do dynamic dark: */ }}
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${roleConfig.light} dark:${roleConfig.dark.replace("dark:", "")}`}
+      style={
+        {
+          /* fallback for dark mode since Tailwind can't do dynamic dark: */
+        }
+      }
     >
       <span>{roleConfig.icon}</span>
       {roleConfig.label}
@@ -516,19 +612,24 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] transition-colors duration-300">
-
       {/* Background orbs (dark only) */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
-        <div className="absolute w-[600px] h-[600px] rounded-full blur-[140px] -top-40 -left-40 opacity-0 dark:opacity-100 transition-opacity duration-500"
-          style={{ background: `radial-gradient(circle, ${roleConfig.glow} 0%, transparent 70%)` }} />
+        <div
+          className="absolute w-[600px] h-[600px] rounded-full blur-[140px] -top-40 -left-40 opacity-0 dark:opacity-100 transition-opacity duration-500"
+          style={{
+            background: `radial-gradient(circle, ${roleConfig.glow} 0%, transparent 70%)`,
+          }}
+        />
         <div className="absolute w-[500px] h-[500px] bg-purple-500/20 rounded-full blur-[120px] -bottom-32 -right-32 opacity-0 dark:opacity-100 transition-opacity duration-500" />
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-
         {/* ── Top nav ── */}
         <div className="flex items-center justify-between mb-6">
-          <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          >
             <ChevronLeft size={16} /> Back to Home
           </Link>
           <button
@@ -542,12 +643,13 @@ const ProfilePage = () => {
         {/* ── Hero card ── */}
         <Card className="mb-5 overflow-hidden">
           {/* Gradient banner */}
-          <div className={`h-24 bg-gradient-to-r ${roleConfig.avatar} opacity-80 dark:opacity-60`} />
+          <div
+            className={`h-24 bg-gradient-to-r ${roleConfig.avatar} opacity-80 dark:opacity-60`}
+          />
 
           <div className="px-6 pb-6">
             {/* Avatar + info — centered layout */}
             <div className="flex flex-col items-center text-center -mt-14 mb-4">
-
               {/* Avatar Editor */}
               <AvatarEditor
                 user={user}
@@ -560,7 +662,9 @@ const ProfilePage = () => {
               />
 
               {avatarError && (
-                <p className="mt-2 text-xs text-red-500 dark:text-red-400">{avatarError}</p>
+                <p className="mt-2 text-xs text-red-500 dark:text-red-400">
+                  {avatarError}
+                </p>
               )}
 
               {/* Name + email */}
@@ -568,36 +672,60 @@ const ProfilePage = () => {
                 <h1 className="text-xl font-bold text-slate-800 dark:text-white font-heading leading-tight">
                   {user.name}
                 </h1>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{user.email}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  {user.email}
+                </p>
               </div>
 
               {/* Badges */}
               <div className="flex flex-wrap gap-2 justify-center mt-3">
-                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border
-                  ${user.role === "student" ? "bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-brand-600/20 dark:text-brand-300 dark:border-brand-500/30"
-                  : user.role === "tutor" ? "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30"
-                  : "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30"}`}>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border
+                  ${
+                    user.role === "student"
+                      ? "bg-indigo-100 text-indigo-700 border-indigo-300 dark:bg-brand-600/20 dark:text-brand-300 dark:border-brand-500/30"
+                      : user.role === "tutor"
+                        ? "bg-emerald-100 text-emerald-700 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30"
+                        : "bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30"
+                  }`}
+                >
                   {roleConfig.icon} {roleConfig.label}
                 </span>
                 {verificationBadge}
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10">
-                  <Sparkles size={11} /> Member since {formatDate(user.createdAt)}
+                  <Sparkles size={11} /> Member since{" "}
+                  {formatDate(user.createdAt)}
                 </span>
               </div>
 
               {/* Edit / Save / Cancel */}
               <div className="flex gap-2 mt-4">
                 {!isEditing ? (
-                  <Button variant="outline" size="sm" onClick={handleEditClick} leftIcon={<Pencil size={13} />}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditClick}
+                    leftIcon={<Pencil size={13} />}
+                  >
                     Edit Profile
                   </Button>
                 ) : (
                   <>
-                    <Button size="sm" onClick={handleSave} loading={isSaving} leftIcon={<Check size={13} />}
-                      className="bg-gradient-to-r from-blue-500 to-indigo-500 border-none text-white hover:opacity-90">
+                    <Button
+                      size="sm"
+                      onClick={handleSave}
+                      loading={isSaving}
+                      leftIcon={<Check size={13} />}
+                      className="bg-gradient-to-r from-blue-500 to-indigo-500 border-none text-white hover:opacity-90"
+                    >
                       Save
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={handleCancel} leftIcon={<X size={13} />}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCancel}
+                      leftIcon={<X size={13} />}
+                    >
                       Cancel
                     </Button>
                   </>
@@ -621,9 +749,24 @@ const ProfilePage = () => {
 
         {/* ── Stats row ── */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-          <StatCard icon={<Calendar size={16} />} label="Days Active" value={daysSinceJoined} sub={`Joined ${timeAgo(user.createdAt)}`} />
-          <StatCard icon={<Activity size={16} />} label="Account Status" value={isVerified ? "Active" : "Pending"} sub={isVerified ? "Email verified" : "Verify email"} />
-          <StatCard icon={<Shield size={16} />} label="Role" value={roleConfig.label} sub={`${roleConfig.icon} Platform role`} />
+          <StatCard
+            icon={<Calendar size={16} />}
+            label="Days Active"
+            value={daysSinceJoined}
+            sub={`Joined ${timeAgo(user.createdAt)}`}
+          />
+          <StatCard
+            icon={<Activity size={16} />}
+            label="Account Status"
+            value={isVerified ? "Active" : "Pending"}
+            sub={isVerified ? "Email verified" : "Verify email"}
+          />
+          <StatCard
+            icon={<Shield size={16} />}
+            label="Role"
+            value={roleConfig.label}
+            sub={`${roleConfig.icon} Platform role`}
+          />
         </div>
 
         {/* ── Tabs ── */}
@@ -633,9 +776,10 @@ const ProfilePage = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200
-                ${activeTab === tab.id
-                  ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                ${
+                  activeTab === tab.id
+                    ? "bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                 }`}
             >
               {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
@@ -649,35 +793,76 @@ const ProfilePage = () => {
             <SectionTitle>Basic Information</SectionTitle>
 
             {isEditing ? (
-              <form onSubmit={handleSave} noValidate className="flex flex-col gap-4">
-                <Input id="name" label="Full Name" placeholder="Enter your full name"
-                  value={formData.name} onChange={handleChange} error={errors.name}
-                  required leftIcon={<User size={16} />} />
-                <Input id="email-display" label="Email" type="email" value={user.email}
-                  disabled leftIcon={<Mail size={16} />} helperText="Email cannot be changed." />
+              <form
+                onSubmit={handleSave}
+                noValidate
+                className="flex flex-col gap-4"
+              >
+                <Input
+                  id="name"
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  error={errors.name}
+                  required
+                  leftIcon={<User size={16} />}
+                />
+                <Input
+                  id="email-display"
+                  label="Email"
+                  type="email"
+                  value={user.email}
+                  disabled
+                  leftIcon={<Mail size={16} />}
+                  helperText="Email cannot be changed."
+                />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-slate-600 dark:text-gray-300">Role</label>
+                  <label className="text-sm font-medium text-slate-600 dark:text-gray-300">
+                    Role
+                  </label>
                   <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-400 text-sm cursor-not-allowed">
                     <Shield size={15} className="flex-shrink-0" />
                     <span>{ROLE_LABELS[user.role]}</span>
                   </div>
-                  <p className="text-xs text-slate-400">Role is assigned at registration and cannot be changed.</p>
+                  <p className="text-xs text-slate-400">
+                    Role is assigned at registration and cannot be changed.
+                  </p>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-slate-600 dark:text-gray-300">Email Verification</label>
+                  <label className="text-sm font-medium text-slate-600 dark:text-gray-300">
+                    Email Verification
+                  </label>
                   <div className="flex items-center justify-between px-3.5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                     {verificationBadge}
                     {!isVerified && (
-                      <Link to="/verify-email" className="text-xs text-blue-500 hover:underline">Verify Email →</Link>
+                      <Link
+                        to="/verify-email"
+                        className="text-xs text-blue-500 hover:underline"
+                      >
+                        Verify Email →
+                      </Link>
                     )}
                   </div>
                 </div>
               </form>
             ) : (
               <>
-                <InfoRow icon={<User size={15} />} label="Full Name" value={user.name} />
-                <InfoRow icon={<Mail size={15} />} label="Email Address" value={user.email} />
-                <InfoRow icon={<Shield size={15} />} label="Role" value={roleBadge} />
+                <InfoRow
+                  icon={<User size={15} />}
+                  label="Full Name"
+                  value={user.name}
+                />
+                <InfoRow
+                  icon={<Mail size={15} />}
+                  label="Email Address"
+                  value={user.email}
+                />
+                <InfoRow
+                  icon={<Shield size={15} />}
+                  label="Role"
+                  value={roleBadge}
+                />
                 <InfoRow
                   icon={<BadgeCheck size={15} />}
                   label="Email Verification"
@@ -685,7 +870,12 @@ const ProfilePage = () => {
                     <div className="flex items-center gap-3 flex-wrap">
                       {verificationBadge}
                       {!isVerified && (
-                        <Link to="/verify-email" className="text-xs text-blue-500 hover:underline">Verify Email →</Link>
+                        <Link
+                          to="/verify-email"
+                          className="text-xs text-blue-500 hover:underline"
+                        >
+                          Verify Email →
+                        </Link>
                       )}
                     </div>
                   }
@@ -699,19 +889,37 @@ const ProfilePage = () => {
         {activeTab === "account" && (
           <Card className="p-6">
             <SectionTitle>Account Details</SectionTitle>
-            <InfoRow icon={<Calendar size={15} />} label="Member Since" value={formatDate(user.createdAt)} />
+            <InfoRow
+              icon={<Calendar size={15} />}
+              label="Member Since"
+              value={formatDate(user.createdAt)}
+            />
             {user.updatedAt && (
-              <InfoRow icon={<Clock size={15} />} label="Last Updated" value={`${formatDate(user.updatedAt)} (${timeAgo(user.updatedAt)})`} />
+              <InfoRow
+                icon={<Clock size={15} />}
+                label="Last Updated"
+                value={`${formatDate(user.updatedAt)} (${timeAgo(user.updatedAt)})`}
+              />
             )}
-            <InfoRow icon={<Shield size={15} />} label="Auth Provider"
+            <InfoRow
+              icon={<Shield size={15} />}
+              label="Auth Provider"
               value={
                 <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">
-                  {user.provider === "google" ? "🔵 Google OAuth" : "🔑 Email & Password"}
+                  {user.provider === "google"
+                    ? "🔵 Google OAuth"
+                    : "🔑 Email & Password"}
                 </span>
               }
             />
-            <InfoRow icon={<User size={15} />} label="User ID"
-              value={<span className="font-mono text-xs text-slate-400 dark:text-slate-500 break-all">{user.id || user._id}</span>}
+            <InfoRow
+              icon={<User size={15} />}
+              label="User ID"
+              value={
+                <span className="font-mono text-xs text-slate-400 dark:text-slate-500 break-all">
+                  {user.id || user._id}
+                </span>
+              }
             />
           </Card>
         )}
@@ -725,7 +933,10 @@ const ProfilePage = () => {
               {user.provider === "google" ? (
                 <div className="flex items-start gap-3 p-4 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-sm text-blue-700 dark:text-blue-300">
                   <Info size={16} className="shrink-0 mt-0.5" />
-                  <p>Your account uses Google OAuth. Password management is handled by Google.</p>
+                  <p>
+                    Your account uses Google OAuth. Password management is
+                    handled by Google.
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -733,7 +944,11 @@ const ProfilePage = () => {
                     To change your password, use the forgot password flow.
                   </p>
                   <Link to="/forgot-password">
-                    <Button variant="outline" size="sm" leftIcon={<Lock size={14} />}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Lock size={14} />}
+                    >
                       Change Password
                     </Button>
                   </Link>
@@ -745,7 +960,12 @@ const ProfilePage = () => {
             <Card className="p-6 border-red-200 dark:border-red-500/20 bg-red-50/50 dark:bg-red-950/20">
               <SectionTitle>Danger Zone</SectionTitle>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed">
-                Permanently delete your account and all associated data. This action <strong className="text-slate-700 dark:text-slate-300">cannot be undone</strong>.
+                Permanently delete your account and all associated data. This
+                action{" "}
+                <strong className="text-slate-700 dark:text-slate-300">
+                  cannot be undone
+                </strong>
+                .
               </p>
               <Button
                 variant="danger"
@@ -758,7 +978,6 @@ const ProfilePage = () => {
             </Card>
           </div>
         )}
-
       </div>
 
       {/* ── Delete confirm modal ── */}

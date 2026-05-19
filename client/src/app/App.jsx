@@ -31,6 +31,7 @@ import InterviewResults from "../modules/mock-interview/pages/InterviewResults";
 import InterviewHistory from "../modules/mock-interview/pages/InterviewHistory";
 import TutorInterviewConsole from "../modules/mock-interview/pages/TutorInterviewConsole";
 import TutorInterviewsList from "../modules/mock-interview/pages/TutorInterviewsList";
+import TutorAnalyticsDashboard from "../modules/analytics/TutorAnalyticsDashboard";
 import ProtectedRoute from "../shared/components/ProtectedRoute";
 import ThemeToggle from "../shared/components/ThemeToggle";
 import SocketNotificationListener from "../shared/components/SocketNotificationListener";
@@ -146,6 +147,16 @@ function App() {
           }
         />
         <Route path="/profile" element={<ProfilePage />} />
+
+        {/* Tutor Analytics */}
+        <Route
+          path="/tutor/analytics"
+          element={
+            <ProtectedRoute requiredRole="tutor">
+              <TutorAnalyticsDashboard />
+            </ProtectedRoute>
+          }
+        />
         
         {/* Live Classrooms */}
         <Route

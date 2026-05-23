@@ -8,6 +8,7 @@ import { generateRecommendations } from "../../../../ai-ml/pipeline/recommendati
 import AppError from "../../utils/AppError.js";
 import { getIO } from "../../utils/socketIO.js";
 import recruiterIntelligenceService from "../recruiterIntelligence/service.js";
+import cache from "../../utils/cache.js";
 
 /**
  * Create a new job posting
@@ -141,6 +142,10 @@ export const updateJob = async (id, updateData, recruiterId) => {
  * @returns {Promise<Array>} Array of { skill: string, count: number }
  */
 export const getSkillTrends = async () => {
+  const CACHE_KEY = "global_skill_trends";
+  const cachedData = cache.get(CACHE_KEY);
+  if (cachedData) return cachedData;
+
   const trends = await JobPosting.aggregate([
     { $match: { status: "open" } },
     { $unwind: "$skills" },
@@ -160,6 +165,8 @@ export const getSkillTrends = async () => {
       },
     },
   ]);
+  
+  cache.set(CACHE_KEY, trends, 900); // Cache for 15 minutes
   return trends;
 };
 
@@ -279,6 +286,10 @@ export const getJobRecommendations = async (user) => {
  * @returns {Promise<Object>} - Analytics data
  */
 export const getRecruiterAnalytics = async (recruiterId) => {
+  const CACHE_KEY = `recruiter_analytics_${recruiterId.toString()}`;
+  const cachedData = cache.get(CACHE_KEY);
+  if (cachedData) return cachedData;
+
   // Get all jobs for this recruiter
   const allJobs = await JobPosting.find({ recruiter: recruiterId })
     .sort({ createdAt: -1 })
@@ -347,13 +358,16 @@ export const getRecruiterAnalytics = async (recruiterId) => {
     createdAt: job.createdAt,
   }));
 
-  return {
+  const result = {
     totalJobs: allJobs.length,
     statusBreakdown,
     jobsByMonth,
     topSkills,
     recentJobs,
   };
+
+  cache.set(CACHE_KEY, result, 300); // Cache for 5 minutes
+  return result;
 };
 
 /**

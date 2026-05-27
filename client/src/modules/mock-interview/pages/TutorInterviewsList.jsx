@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "../../../shared/landing/Navbar";
 import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Clock, CheckCircle, Video, ArrowRight, User } from "lucide-react";
@@ -27,8 +28,9 @@ const TutorInterviewsList = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 pt-24">
+        <Navbar />
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     );
   }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "../../../shared/landing/Navbar";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Video, Users, ArrowRight, MonitorPlay, Calendar, BookOpen, Clock, Power, ShieldAlert } from "lucide-react";
@@ -130,7 +131,8 @@ export default function ClassroomsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#020617] text-gray-900 dark:text-white pt-24 pb-16 px-6">
+    <div className="min-h-screen bg-white dark:bg-[#020617] text-gray-900 dark:text-white pt-24 pb-16 px-6 pt-24">
+      <Navbar />
       <div className="max-w-6xl mx-auto">
         
         {/* Header section */}

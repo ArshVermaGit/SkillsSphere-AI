@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "../../../shared/landing/Navbar";
 import { useNavigate } from "react-router-dom";
 import { getHistory } from "../services/interviewService";
 import Pagination from "../../../shared/components/Pagination";

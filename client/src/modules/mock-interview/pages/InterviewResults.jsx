@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Navbar from "../../../shared/landing/Navbar";
 import { useParams, useNavigate } from "react-router-dom";
 import { getResults } from "../services/interviewService";
 import InterviewResultsSkeleton from "../components/InterviewResultsSkeleton";

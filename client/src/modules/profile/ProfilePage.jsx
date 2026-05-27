@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import Navbar from "../../shared/landing/Navbar";
 import { Link } from "react-router-dom";
 import ProfileSkeleton from "./components/ProfileSkeleton";
 import {
@@ -343,7 +344,8 @@ const ProfilePage = () => {
   );
 
   return (
-    <div className="min-h-screen transition-colors duration-300 relative bg-gradient-to-br from-[#f0eeff] via-[#f7f9fc] to-[#edfdf5] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen transition-colors duration-300 relative bg-gradient-to-br from-[#f0eeff] via-[#f7f9fc] to-[#edfdf5] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 pt-24">
+      <Navbar />
       <div className="relative" style={{ zIndex: 2 }}>
         
         {/* ── Cover Banner ── */}

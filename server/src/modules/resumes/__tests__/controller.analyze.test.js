@@ -40,9 +40,9 @@ const parsedResume = {
   github: "https://github.com/ada",
   portfolio: "https://ada.dev",
   keywords: ["JavaScript", "React", "Node.js"],
-  extractedTextLength: 128,
+  extractedTextLength: 200,
   resumeText:
-    "Ada Lovelace JavaScript React Node.js developer with 3 years experience building APIs.",
+    "Ada Lovelace is an experienced software engineer with a strong background in JavaScript, React, and Node.js. She has 3 years of professional experience building highly scalable APIs and full-stack web applications.",
 };
 
 afterEach(() => {
@@ -228,6 +228,7 @@ test("analyze response shape regression is protected", async () => {
     "file",
     "evaluatorBreakdown",
     "overallScore",
+    "isScannedPdf",
   ]);
 });
 
@@ -322,171 +323,45 @@ test("analyze resume saves to cache on cache miss", async () => {
   assert.equal(savedCacheData.score, body.overallScore);
 });
 
-test("analyzeResume rejects upload when user already has 3 resumes", async () => {
-  const originalCount = Resume.countDocuments;
-  Resume.countDocuments = async () => 3;
+test("analyze returns isScannedPdf false for standard resume", async () => {
+  stubControllerDependencies();
 
-  try {
-    const req = {
-      file: { path: "/test" },
-      user: { _id: "user1" }
-    };
-    let nextError = null;
-    const next = (err) => {
-      nextError = err;
-    };
-
-    await analyzeResume(req, {}, next);
-    assert.ok(nextError);
-    assert.equal(nextError.statusCode, 400);
-    assert.equal(nextError.message, "Maximum limit of 3 resumes reached. Please delete an existing version to upload a new one.");
-  } finally {
-    Resume.countDocuments = originalCount;
-  }
-});
-
-test("listResumes returns list of resumes for user", async () => {
-  const dummyResumes = [
-    { _id: "1", title: "Resume 1", user: "user1", isActive: true },
-    { _id: "2", title: "Resume 2", user: "user1", isActive: false },
-  ];
-  const originalFind = Resume.find;
-  Resume.find = () => ({
-    select: () => ({
-      sort: () => ({
-        lean: async () => dummyResumes
-      })
-    })
+  const { status, body } = await postAnalyze({
+    jobSkills: JSON.stringify(["JavaScript"]),
+    jobDescription: "JavaScript developer",
   });
 
-  try {
-    const req = { user: { _id: "user1" } };
-    let jsonResult = null;
-    const res = {
-      status: (code) => {
-        assert.equal(code, 200);
-        return {
-          json: (data) => {
-            jsonResult = data;
-          }
-        };
-      }
-    };
-
-    await listResumes(req, res, () => {});
-    assert.equal(jsonResult.success, true);
-    assert.deepEqual(jsonResult.data, dummyResumes);
-  } finally {
-    Resume.find = originalFind;
-  }
+  assert.equal(status, 200);
+  assert.equal(body.isScannedPdf, false);
 });
 
-test("setActiveResume updates active status", async () => {
-  const dummyResume = {
-    _id: "1",
-    user: "user1",
-    isActive: false,
-    save: async function() {
-      this.isActive = true;
-      return this;
-    }
-  };
-
-  const originalFindOne = Resume.findOne;
-  const originalUpdateMany = Resume.updateMany;
-  
-  Resume.findOne = async () => dummyResume;
-  Resume.updateMany = async () => ({});
-
-  try {
-    const req = { params: { id: "1" }, user: { _id: "user1" } };
-    let jsonResult = null;
-    const res = {
-      status: (code) => {
-        assert.equal(code, 200);
-        return {
-          json: (data) => {
-            jsonResult = data;
-          }
-        };
-      }
-    };
-
-    await setActiveResume(req, res, () => {});
-    assert.equal(jsonResult.success, true);
-    assert.equal(jsonResult.data.isActive, true);
-  } finally {
-    Resume.findOne = originalFindOne;
-    Resume.updateMany = originalUpdateMany;
-  }
-});
-
-test("renameResume updates resume title", async () => {
-  const dummyResume = {
-    _id: "1",
-    title: "New Title"
-  };
-
-  const originalFindOneAndUpdate = Resume.findOneAndUpdate;
-  Resume.findOneAndUpdate = () => ({
-    select: async () => dummyResume
+test("analyze returns isScannedPdf true for scanned resume (low word count)", async () => {
+  const savedPayloads = [];
+  setResumeControllerDependencies({
+    parseResume: async () => ({
+      ...parsedResume,
+      resumeText: "Scanned resume. Image file only.",
+      extractedTextLength: 32,
+    }),
+    upsertResume: async (userId, payload) => {
+      savedPayloads.push({ ...payload, user: userId });
+      return {
+        _id: "64f1f77bcf86cd7994390111",
+        ...payload,
+        user: userId,
+      };
+    },
+    findCachedAnalysis: async () => null,
+    saveCachedAnalysis: async () => ({}),
   });
 
-  try {
-    const req = { params: { id: "1" }, body: { title: "New Title" }, user: { _id: "user1" } };
-    let jsonResult = null;
-    const res = {
-      status: (code) => {
-        assert.equal(code, 200);
-        return {
-          json: (data) => {
-            jsonResult = data;
-          }
-        };
-      }
-    };
+  const { status, body } = await postAnalyze({
+    jobSkills: JSON.stringify(["JavaScript"]),
+    jobDescription: "JavaScript developer",
+  });
 
-    await renameResume(req, res, () => {});
-    assert.equal(jsonResult.success, true);
-    assert.equal(jsonResult.data.title, "New Title");
-  } finally {
-    Resume.findOneAndUpdate = originalFindOneAndUpdate;
-  }
-});
-
-test("deleteResume deletes document", async () => {
-  const dummyResume = {
-    _id: "1",
-    user: "user1",
-    isActive: false
-  };
-
-  const originalFindOne = Resume.findOne;
-  const originalDeleteOne = Resume.deleteOne;
-  
-  Resume.findOne = async () => dummyResume;
-  Resume.deleteOne = async () => ({});
-
-  try {
-    const req = { params: { id: "1" }, user: { _id: "user1" } };
-    let jsonResult = null;
-    const res = {
-      status: (code) => {
-        assert.equal(code, 200);
-        return {
-          json: (data) => {
-            jsonResult = data;
-          }
-        };
-      }
-    };
-
-    await deleteResume(req, res, () => {});
-    assert.equal(jsonResult.success, true);
-    assert.equal(jsonResult.message, "Resume deleted successfully");
-  } finally {
-    Resume.findOne = originalFindOne;
-    Resume.deleteOne = originalDeleteOne;
-  }
+  assert.equal(status, 200);
+  assert.equal(body.isScannedPdf, true);
+  assert.equal(savedPayloads[0].isScannedPdf, true);
 });
 

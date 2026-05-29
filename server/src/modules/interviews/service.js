@@ -116,11 +116,20 @@ export const processAnswerSubmission = async ({
   transcript,
   audioFile,
 }) => {
-  if (pendingSubmissions.get(sessionId)) {
-    throw new AppError("Answer submission already in progress for this session", 429);
-  }
+  const lockKey = `interview_lock:${sessionId}`;
+  const useRedis = redisClient.isReady;
 
-  pendingSubmissions.set(sessionId, true);
+  if (useRedis) {
+    const acquired = await redisClient.set(lockKey, "LOCKED", { NX: true, EX: 30 });
+    if (!acquired) {
+      throw new AppError("Answer submission already in progress for this session", 429);
+    }
+  } else {
+    if (pendingSubmissions.get(sessionId)) {
+      throw new AppError("Answer submission already in progress for this session", 429);
+    }
+    pendingSubmissions.set(sessionId, true);
+  }
 
   try {
     const session = await InterviewSession.findOne({
@@ -226,7 +235,11 @@ export const processAnswerSubmission = async ({
       nextQuestion,
     };
   } finally {
-    pendingSubmissions.delete(sessionId);
+    if (useRedis) {
+      await redisClient.del(lockKey).catch(console.error);
+    } else {
+      pendingSubmissions.delete(sessionId);
+    }
   }
 };
 

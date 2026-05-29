@@ -6,7 +6,7 @@ import {
   User, Mail, Shield, Calendar, Clock, Pencil, X, Check,
   ChevronLeft, BadgeCheck, AlertCircle, Trash2, LogOut,
   Info, Lock, Sparkles, Activity, Camera, Upload, MapPin,
-  Briefcase, Globe, ExternalLink
+  Briefcase, Globe, ExternalLink, Settings
 } from "lucide-react";
 import Input from "../../shared/components/Input";
 import Button from "../../shared/components/Button";
@@ -22,6 +22,7 @@ import {
 import LoadingState from "../../shared/components/LoadingState";
 import { getSignedFileUrl } from "../../services/fileService";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
+import PreferencesSettings from "./components/PreferencesSettings";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -39,6 +40,7 @@ const ROLE_CONFIG = {
 
 const TABS = [
   { id: "info", label: "Profile Info", icon: <User size={15} /> },
+  { id: "settings", label: "Settings", icon: <Settings size={15} /> },
   { id: "account", label: "Account", icon: <Info size={15} /> },
   { id: "security", label: "Security", icon: <Lock size={15} /> },
 ];
@@ -595,6 +597,10 @@ const ProfilePage = () => {
                   ))}
                 </div>
               </div>
+            )}
+
+            {activeTab === "settings" && (
+              <PreferencesSettings token={token} />
             )}
 
 {activeTab === "security" && (

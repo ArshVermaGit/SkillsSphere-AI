@@ -2,40 +2,35 @@
 
 const ProfileSkeleton = () => {
   return (
-    <div className="min-h-screen animate-pulse pt-24">
-      {/* Banner Skeleton */}
-      <div className="h-44 sm:h-36 bg-gray-200 dark:bg-slate-700" />
+    <div className="min-h-screen animate-pulse">
+      {/* Top Navigation Skeleton */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="h-6 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+        <div className="h-10 w-28 bg-gray-200 dark:bg-slate-700 rounded"></div>
+      </div>
 
-      {/* Main Grid */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 -mt-10">
-        
-        {/* Sidebar — Single Consolidated Card */}
-        <aside>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
-            {/* Avatar + Name + Role */}
-            <div className="p-5 flex flex-col items-center">
-              <div className="h-32 w-32 rounded-full bg-gray-200 dark:bg-slate-700 mb-3" />
-              <div className="h-5 w-36 bg-gray-200 dark:bg-slate-700 rounded mx-auto mb-2" />
-              <div className="h-3 w-44 bg-gray-100 dark:bg-slate-800 rounded mx-auto mb-3" />
-              <div className="h-6 w-20 bg-gray-100 dark:bg-slate-800 rounded-full mx-auto" />
-            </div>
+      {/* Hero Card Skeleton */}
+      <div className="mb-5 overflow-hidden rounded-2xl border border-gray-200 dark:border-border">
+        {/* Gradient Banner Skeleton */}
+        <div className="h-24 bg-gray-200 dark:bg-slate-700"></div>
 
             <div className="border-t border-gray-100 dark:border-white/5" />
 
-            {/* Contact Info */}
-            <div className="px-5 py-4">
-              <div className="h-3 w-20 bg-gray-200 dark:bg-slate-700 rounded mb-3" />
-              <div className="flex flex-col gap-2.5">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-2.5">
-                    <div className="h-4 w-4 bg-gray-200 dark:bg-slate-700 rounded" />
-                    <div className="h-4 w-32 bg-gray-100 dark:bg-slate-800 rounded" />
-                  </div>
-                ))}
-              </div>
+            {/* Name + Email */}
+            <div className="mt-3 w-full">
+              <div className="h-6 w-40 bg-slate-700 rounded mx-auto mb-2"></div>
+              <div className="h-4 w-48 bg-gray-300 dark:bg-slate-800 rounded mx-auto"></div>
             </div>
 
-            <div className="border-t border-gray-100 dark:border-white/5" />
+            {/* Badges - 3 badges */}
+            <div className="flex flex-wrap gap-2 justify-center mt-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-6 w-24 bg-gray-300 dark:bg-slate-800 rounded-full"
+                ></div>
+              ))}
+            </div>
 
             {/* Activity */}
             <div className="px-5 py-4">
@@ -60,20 +55,19 @@ const ProfileSkeleton = () => {
             <div className="h-9 w-28 bg-gray-200 dark:bg-slate-700 rounded-lg" />
           </div>
 
-          {/* Basic Information Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
-            <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-5" />
-            <div className="flex flex-col divide-y divide-gray-100 dark:divide-white/5">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3 py-3.5">
-                  <div className="h-4 w-4 bg-gray-200 dark:bg-slate-700 rounded mt-0.5" />
-                  <div className="flex-1">
-                    <div className="h-3 w-16 bg-gray-100 dark:bg-slate-800 rounded mb-1.5" />
-                    <div className="h-4 w-40 bg-gray-200 dark:bg-slate-700 rounded" />
-                  </div>
-                </div>
-              ))}
+      {/* Stats Row - 3 Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-surface p-4"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-5 w-5 bg-slate-700 rounded"></div>
+              <div className="h-3 w-16 bg-slate-700 rounded"></div>
             </div>
+            <div className="h-6 w-12 bg-slate-700 rounded mb-2"></div>
+            <div className="h-3 w-20 bg-gray-300 dark:bg-slate-800 rounded"></div>
           </div>
 
           {/* Account Details Card */}
@@ -92,18 +86,24 @@ const ProfileSkeleton = () => {
             </div>
           </div>
 
-          {/* Security Card */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm p-6">
-            <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-5" />
-            <div className="h-14 w-full bg-gray-100 dark:bg-slate-800 rounded-xl" />
-          </div>
+      {/* Tab Content - Profile Info Card Skeleton */}
+      <div className="rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-surface p-6">
+        <div className="h-6 w-32 bg-slate-700 rounded mb-6"></div>
 
-          {/* Danger Zone Card */}
-          <div className="bg-red-50/60 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-500/20 p-6">
-            <div className="h-3 w-24 bg-red-200 dark:bg-red-900/40 rounded mb-2" />
-            <div className="h-3 w-64 bg-red-100 dark:bg-red-900/20 rounded mb-4" />
-            <div className="h-9 w-32 bg-red-200 dark:bg-red-900/40 rounded-lg" />
-          </div>
+        {/* Info Rows */}
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-border/50"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 bg-slate-700 rounded"></div>
+                <div className="h-4 w-32 bg-slate-700 rounded"></div>
+              </div>
+              <div className="h-4 w-40 bg-gray-300 dark:bg-slate-800 rounded"></div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

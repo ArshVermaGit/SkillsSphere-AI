@@ -15,6 +15,18 @@ const resumeSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isScannedPdf: {
+      type: Boolean,
+      default: false,
+    },
+    title: {
+      type: String,
+      default: "My Resume",
+    },
+    isActive: {
+      type: Boolean,
+      default: false,
+    },
     phone: {
       type: String,
       default: null,
@@ -63,6 +75,10 @@ const resumeSchema = new mongoose.Schema(
       type: String,
       default: null,
       select: false, // Don't include in queries by default for privacy
+    },
+    isScannedPdf: {
+      type: Boolean,
+      default: false,
     },
     jobSkills: {
       type: [String],
@@ -152,6 +168,28 @@ const Resume = mongoose.model("Resume", resumeSchema);
 Resume.schema.index({ user: 1 });
 Resume.schema.index({ skills: 1 });
 Resume.schema.index({ createdAt: -1 });
+Resume.schema.index(
+  {
+    name: "text",
+    email: "text",
+    skills: "text",
+    education: "text",
+    experience: "text",
+    projects: "text",
+  },
+  {
+    name: "ResumeTextIndex",
+    weights: {
+      name: 10,
+      skills: 8,
+      education: 5,
+      experience: 4,
+      projects: 3,
+      email: 1,
+    },
+  }
+);
 
 export default Resume;
+
 

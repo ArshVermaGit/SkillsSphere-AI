@@ -1,4 +1,5 @@
 import InterviewSession from "../../database/models/InterviewSession.js";
+import LearningProgress from "../../database/models/LearningProgress.js";
 import { processAnswerSubmission } from "./service.js";
 import { transcribeAudioStream } from "../../integrations/aiInterviewService.js";
 
@@ -16,6 +17,18 @@ export function initInterviewSockets(io) {
         const user = socket.user; // populated by auth middleware
         if (!user) {
           socket.emit("unauthorized", { message: "User authentication required" });
+          return;
+        }
+
+        const userId = user._id;
+        const isOwner = session.userId.equals(userId);
+        const isConductor = session.conductorId && session.conductorId.equals(userId);
+        const isObserver = session.observers && session.observers.some((id) => id.equals(userId));
+        const isTutor = user.role === "tutor" &&
+          await LearningProgress.findOne({ user: session.userId, tutorsTracking: userId });
+
+        if (!isOwner && !isConductor && !isObserver && !isTutor) {
+          socket.emit("unauthorized", { message: "You are not authorized to join this interview session" });
           return;
         }
 
@@ -85,7 +98,11 @@ export function initInterviewSockets(io) {
 
     // Handle answer submission
     socket.on("submit-answer", async ({ sessionId, transcript, audioBuffer }) => {
-      if (!socket.data || socket.data.sessionId !== sessionId) return;
+      console.log(`[Socket] Received submit-answer for session ${sessionId}, transcript: ${transcript}`);
+      if (!socket.data || socket.data.sessionId !== sessionId) {
+        console.log(`[Socket] Missing socket.data or mismatched sessionId. socket.data:`, socket.data);
+        return;
+      }
 
       try {
         const audioFile = audioBuffer ? { buffer: audioBuffer } : null;
@@ -97,6 +114,7 @@ export function initInterviewSockets(io) {
           audioFile,
         });
 
+        console.log(`[Socket] Answer evaluated successfully for session ${sessionId}`);
         // Emit the result back to this specific client
         socket.emit("answer-evaluated", result);
       } catch (error) {

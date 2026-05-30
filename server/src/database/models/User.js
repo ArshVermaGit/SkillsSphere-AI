@@ -36,7 +36,17 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    profilePicPublicId: {
+      type: String,
+      default: null,
+    },
+
     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    proFeatures: {
       type: Boolean,
       default: false,
     },
@@ -59,6 +69,31 @@ const userSchema = new mongoose.Schema(
     companyWebsite: {
       type: String,
       default: null,
+    },
+
+    preferences: {
+      notifications: {
+        emailNotifications: { type: Boolean, default: true },
+        interviewReminders: { type: Boolean, default: true },
+        jobAlerts: { type: Boolean, default: true },
+        applicationStatusUpdates: { type: Boolean, default: true },
+        platformUpdates: { type: Boolean, default: false },
+      },
+      emailFrequency: {
+        type: String,
+        enum: ["instant", "daily", "weekly", "never"],
+        default: "weekly",
+      },
+      privacy: {
+        profileVisibility: {
+          type: String,
+          enum: ["public", "recruiters", "private"],
+          default: "recruiters",
+        },
+        showResumeToRecruiters: { type: Boolean, default: true },
+        showInterviewHistory: { type: Boolean, default: false },
+        allowPersonalizedRecommendations: { type: Boolean, default: true },
+      },
     },
   },
   { timestamps: true }

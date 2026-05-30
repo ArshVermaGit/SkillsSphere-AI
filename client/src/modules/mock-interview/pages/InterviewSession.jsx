@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { submitAnswer, completeInterview } from "../services/interviewService";
 import { apiRequest } from "../../../services/apiClient";
+import { SOCKET_URL } from "../../../config/env";
 import InterviewSessionSkeleton from "../components/InterviewSessionSkeleton";
 import ObserverPanel from "../components/ObserverPanel";
 import RealtimeSentimentIndicator from "../components/RealtimeSentimentIndicator";
@@ -33,10 +34,12 @@ import {
   RefreshCw,
   Info
 } from "lucide-react";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 const TOKEN_KEY = "skillssphere.auth.token";
 
 const InterviewSession = () => {
+  useDocumentTitle("Interview Session");
   const { id: sessionId } = useParams();
   const navigate = useNavigate();
   const textareaRef = useRef(null);
@@ -141,8 +144,7 @@ const InterviewSession = () => {
     if (!session || !user) return;
     const token = localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY);
     
-    const socketUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-    const newSocket = io(socketUrl, { 
+    const newSocket = io(SOCKET_URL, { 
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 10,
@@ -375,7 +377,7 @@ const InterviewSession = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617]">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] pt-24">
         <Navbar />
         <InterviewSessionSkeleton />
       </div>
@@ -384,7 +386,7 @@ const InterviewSession = () => {
 
   if (error && !session) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col pt-24">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 p-10 rounded-3xl flex flex-col items-center max-w-md text-center shadow-xl">
@@ -406,13 +408,26 @@ const InterviewSession = () => {
   const totalQuestions = session?.totalQuestions || 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex flex-col font-sans transition-colors duration-300 pt-24">
       <Navbar />
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 mt-24 sm:mt-28 flex flex-col lg:flex-row gap-8 items-start">
         
         {/* LEFT COLUMN: Telemetry & Status */}
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          <div className="flex justify-start">
+            <button
+              onClick={() => {
+                if (window.confirm("Are you sure you want to exit? Your progress may be lost.")) {
+                  navigate("/dashboard");
+                }
+              }}
+              className="inline-flex items-center gap-2 text-sm text-red-500 hover:text-red-400 transition-colors"
+            >
+              <AlertCircle size={16} />
+              Exit Session
+            </button>
+          </div>
           
           {/* Status Card */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-white/10 flex flex-col gap-6">
@@ -608,6 +623,11 @@ const InterviewSession = () => {
                   <><Trophy size={18} /> View Detailed Analytics</>
                 )}
               </button>
+              {error && (
+                <span className="text-sm font-semibold text-red-500 flex items-center justify-center gap-1.5 bg-red-50 dark:bg-red-500/10 px-3 py-2 rounded-lg mt-2">
+                  <AlertCircle size={16} /> {error}
+                </span>
+              )}
             </div>
           )}
 

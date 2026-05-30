@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Home,
@@ -180,6 +180,7 @@ const Navbar = ({ isAuthenticated = false, user = null }) => {
             <button
               className="bg-[var(--surface-soft)] border border-[var(--border)] w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 dark:text-white cursor-pointer min-h-[44px] min-w-[44px]"
               onClick={() => setIsMenuOpen(false)}
+              aria-label="Close mobile menu"
             >
               <X size={24} />
             </button>

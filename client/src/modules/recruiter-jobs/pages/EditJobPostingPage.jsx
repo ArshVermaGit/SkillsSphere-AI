@@ -6,8 +6,11 @@ import Navbar from "../../../shared/landing/Navbar";
 import JobPostingForm from "../components/JobPostingForm";
 import LoadingState from "../../../shared/components/LoadingState";
 import { updateJobPosting, getJobPostingById } from "../services/jobPostingService";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+
 
 const EditJobPostingPage = () => {
+  useDocumentTitle("Edit Job Posting");
   const { id } = useParams();
   const navigate = useNavigate();
   const { token } = useSelector((state) => state.auth);
@@ -54,6 +57,7 @@ const EditJobPostingPage = () => {
       if (error.errors) {
         setFieldErrors(error.errors);
       }
+      throw error;
     } finally {
       setIsSubmitting(false);
     }

@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { 
-  Award, BookOpen, CheckCircle2, Plus, Target, ExternalLink, Video, FileText, Globe, User, ArrowLeft, ArrowRight
+  Award, BookOpen, CheckCircle2, Plus, Target, ExternalLink, Video, FileText, Globe, User, ArrowLeft, ArrowRight, MessageSquare
 } from "lucide-react";
 import Navbar from "../../../shared/landing/Navbar";
 import { 
   getStudentsRoadmaps, getStudentRoadmap, assignTutorResource, verifyTopic, addTutorMilestone 
 } from "../services/roadmapService";
 import { LoadingState, useToast } from "../../../shared/components";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+import RoadmapCollaborationPanel from "../components/RoadmapCollaborationPanel";
+
 
 export default function TutorRoadmapLobby() {
+  useDocumentTitle("Tutor Roadmap Lobby");
   const { user } = useSelector((state) => state.auth);
   const { success: showSuccess, error: showError } = useToast();
   const [students, setStudents] = useState([]);
@@ -17,6 +22,8 @@ export default function TutorRoadmapLobby() {
   const [studentDetails, setStudentDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [activeMilestoneId, setActiveMilestoneId] = useState(null);
 
   // Resource Assignment Form State
   const [activeTopicId, setActiveTopicId] = useState(null);
@@ -132,11 +139,18 @@ export default function TutorRoadmapLobby() {
   if (loading) return <LoadingState message="Loading Student Progress Lobby..." />;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white font-sans">
+    <div className="min-h-screen bg-[#020617] text-white font-sans pt-24">
       <Navbar />
       <div className="max-w-7xl mx-auto pt-32 pb-20 px-4">
         {/* Header */}
         <div className="mb-12 animate-slide-up">
+          <Link 
+            to="/dashboard" 
+            className="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-300 mb-6 transition-colors"
+          >
+            <ArrowLeft size={16} />
+            Back to Dashboard
+          </Link>
           <div className="flex items-center gap-2 mb-2">
             <div className="p-1.5 bg-indigo-500/20 rounded-md">
               <BookOpen className="w-4 h-4 text-indigo-400" />
@@ -271,9 +285,10 @@ export default function TutorRoadmapLobby() {
                     {showAddMilestone && (
                       <form onSubmit={handleAddMilestone} className="mb-6 p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-xl flex flex-col md:flex-row gap-3 items-end animate-fade-in">
                         <div className="flex-1 w-full">
-                          <label className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1 block">Milestone Topic Name</label>
+                          <label htmlFor="newTopicName" className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1 block">Milestone Topic Name</label>
                           <input 
                             type="text" 
+                            id="newTopicName"
                             value={newTopicName}
                             onChange={e => setNewTopicName(e.target.value)}
                             placeholder="e.g. Advanced System Design"
@@ -336,6 +351,17 @@ export default function TutorRoadmapLobby() {
 
                               <div className="flex items-center gap-2 flex-shrink-0">
                                 <button
+                                  onClick={() => {
+                                    setActiveMilestoneId(topic._id);
+                                    setPanelOpen(true);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all flex items-center gap-1 bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 hover:text-white"
+                                  title="Discuss milestone"
+                                >
+                                  <MessageSquare className="w-3.5 h-3.5" />
+                                  <span>Discuss</span>
+                                </button>
+                                <button
                                   onClick={() => handleVerifyToggle(topic)}
                                   className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter transition-all flex items-center gap-1 ${
                                     isVerified 
@@ -368,9 +394,10 @@ export default function TutorRoadmapLobby() {
                                 >
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     <div>
-                                      <label className="text-[9px] font-black text-slate-400 uppercase">Resource Title</label>
+                                      <label htmlFor="resourceTitle" className="text-[9px] font-black text-slate-400 uppercase">Resource Title</label>
                                       <input 
                                         type="text" 
+                                        id="resourceTitle"
                                         value={resourceTitle}
                                         onChange={e => setResourceTitle(e.target.value)}
                                         placeholder="e.g. Clean Code Book Guide" 
@@ -378,8 +405,9 @@ export default function TutorRoadmapLobby() {
                                       />
                                     </div>
                                     <div>
-                                      <label className="text-[9px] font-black text-slate-400 uppercase">Resource Type</label>
+                                      <label htmlFor="resourceType" className="text-[9px] font-black text-slate-400 uppercase">Resource Type</label>
                                       <select 
+                                        id="resourceType"
                                         value={resourceType}
                                         onChange={e => setResourceType(e.target.value)}
                                         className="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:border-indigo-500"
@@ -391,9 +419,10 @@ export default function TutorRoadmapLobby() {
                                     </div>
                                   </div>
                                   <div>
-                                    <label className="text-[9px] font-black text-slate-400 uppercase">URL Link</label>
+                                    <label htmlFor="resourceUrL" className="text-[9px] font-black text-slate-400 uppercase">URL Link</label>
                                     <input 
                                       type="url" 
+                                      id="resourceUrL"
                                       value={resourceUrL}
                                       onChange={e => setResourceUrL(e.target.value)}
                                       placeholder="https://example.com/..." 
@@ -474,6 +503,18 @@ export default function TutorRoadmapLobby() {
 
         </div>
       </div>
+
+      {/* Collaboration Sidebar Panel */}
+      {studentDetails && (
+        <RoadmapCollaborationPanel
+          roadmapId={studentDetails._id}
+          isOpen={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          initialMilestoneId={activeMilestoneId}
+          milestones={studentDetails.roadmap}
+          currentUser={user}
+        />
+      )}
     </div>
   );
 }

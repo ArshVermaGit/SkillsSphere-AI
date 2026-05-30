@@ -8,10 +8,16 @@ import VideoTile from "../components/VideoTile";
 import Whiteboard from "../components/Whiteboard";
 import SharedCodeEditor from "../components/SharedCodeEditor";
 
+import { SOCKET_URL } from "../../../config/env";
+import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
+import { useToast } from "../../../shared/components/toast/ToastProvider";
+
 export default function ClassroomRoom() {
+  useDocumentTitle("Classroom");
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user, token } = useSelector((state) => state.auth);
+  const toast = useToast();
 
   const [socket, setSocket] = useState(null);
   const [localStream, setLocalStream] = useState(null);
@@ -30,6 +36,7 @@ export default function ClassroomRoom() {
   const peersRef = useRef([]); // To keep track of peer connections inside callbacks
   const socketRef = useRef();
   const localStreamRef = useRef();
+  const screenStreamRef = useRef(null);
   const activeSocketIdsRef = useRef(new Set());
 
   useEffect(() => {
@@ -40,7 +47,7 @@ export default function ClassroomRoom() {
     }
 
     // Initialize Socket
-    const s = io("http://localhost:5000");
+    const s = io(SOCKET_URL);
     setSocket(s);
     socketRef.current = s;
 
@@ -89,8 +96,7 @@ export default function ClassroomRoom() {
         s.on("webrtc-offer", (payload) => {
           // Security check: Verify that the caller is a registered participant in this room
           if (!activeSocketIdsRef.current.has(payload.callerSocketId)) {
-            console.error(`Blocked unauthorized WebRTC stream injection from socket: ${payload.callerSocketId}`);
-            alert("Security Warning: Blocked an unauthorized stream injection attempt from outside this classroom.");
+            console.warn(`Silently dropped unauthorized WebRTC stream injection from socket: ${payload.callerSocketId}`);
             return;
           }
 
@@ -112,7 +118,7 @@ export default function ClassroomRoom() {
         // Receiving an answer
         s.on("webrtc-answer", (payload) => {
           if (!activeSocketIdsRef.current.has(payload.answererSocketId)) {
-            console.error(`Blocked unauthorized WebRTC signaling answer from socket: ${payload.answererSocketId}`);
+            console.warn(`Silently dropped unauthorized WebRTC signaling answer from socket: ${payload.answererSocketId}`);
             return;
           }
           const item = peersRef.current.find(p => p.peerId === payload.answererSocketId);
@@ -124,13 +130,13 @@ export default function ClassroomRoom() {
         // Socket security & error handling
         s.on("unauthorized", (payload) => {
           console.error("Socket unauthorized action:", payload);
-          alert(`Security Warning: ${payload.message || "Unauthorized action detected."}`);
+          toast.error(`Security Warning: ${payload.message || "Unauthorized action detected."}`);
           navigate("/classrooms");
         });
 
         s.on("error", (payload) => {
           console.error("Socket error:", payload);
-          alert(`Socket Error: ${payload.message || "An error occurred."}`);
+          toast.error(`Socket Error: ${payload.message || "An error occurred."}`);
           navigate("/classrooms");
         });
 
@@ -155,13 +161,16 @@ export default function ClassroomRoom() {
       })
       .catch(err => {
         console.error("Failed to get local stream", err);
-        alert("Failed to access camera and microphone.");
+        toast.error("Failed to access camera and microphone.");
       });
 
     return () => {
       s.disconnect();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop());
       }
       peersRef.current.forEach(p => p.peer.destroy());
     };
@@ -245,6 +254,62 @@ export default function ClassroomRoom() {
     setIsHandRaised(newState);
     if (socket) {
       socket.emit("toggle-hand-raise", { roomId, isRaised: newState });
+    }
+  };
+
+  const stopScreenShare = () => {
+    if (!screenStreamRef.current) return;
+    
+    const screenTrack = screenStreamRef.current.getVideoTracks()[0];
+    const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
+    
+    if (screenTrack && cameraTrack) {
+      peersRef.current.forEach(p => {
+        try {
+          p.peer.replaceTrack(screenTrack, cameraTrack, localStreamRef.current);
+        } catch (e) {
+          console.error("Error replacing track back to camera", e);
+        }
+      });
+    }
+
+    screenStreamRef.current.getTracks().forEach(track => track.stop());
+    screenStreamRef.current = null;
+    
+    setLocalStream(localStreamRef.current);
+    setIsScreenSharing(false);
+  };
+
+  const toggleScreenShare = async () => {
+    if (!isScreenSharing) {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ cursor: "always", video: true, audio: false });
+        screenStreamRef.current = stream;
+        
+        const screenTrack = stream.getVideoTracks()[0];
+        const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
+        
+        screenTrack.onended = () => {
+          stopScreenShare();
+        };
+
+        if (cameraTrack) {
+          peersRef.current.forEach(p => {
+            try {
+              p.peer.replaceTrack(cameraTrack, screenTrack, localStreamRef.current);
+            } catch (e) {
+              console.error("Error replacing track to screen", e);
+            }
+          });
+        }
+
+        setLocalStream(stream);
+        setIsScreenSharing(true);
+      } catch (err) {
+        console.error("Failed to share screen", err);
+      }
+    } else {
+      stopScreenShare();
     }
   };
 
@@ -381,6 +446,9 @@ export default function ClassroomRoom() {
             </button>
             <button onClick={toggleHandRaise} className={`p-4 rounded-xl transition-all ${isHandRaised ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30' : 'bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600'}`}>
               <Hand size={24} />
+            </button>
+            <button onClick={toggleScreenShare} className={`p-4 rounded-xl transition-all ${isScreenSharing ? 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30' : 'bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600'}`}>
+              <MonitorUp size={24} />
             </button>
             <button onClick={handleLeave} className="p-4 rounded-xl bg-red-600 hover:bg-red-700 transition-all text-white px-8 font-semibold flex items-center space-x-2">
               <PhoneOff size={20} />

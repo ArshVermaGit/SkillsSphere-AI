@@ -3,8 +3,12 @@ import { useDispatch } from 'react-redux';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { setOAuthData } from '../../features/auth/authSlice';
 import { useToast } from '../../shared/components';
+import { API_URL } from "../../config/env";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
+
 
 const OAuthCallback = () => {
+  useDocumentTitle("OAuth Callback");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -15,7 +19,6 @@ const OAuthCallback = () => {
     const params = new URLSearchParams(location.search);
     const code = params.get('code');
     const error = params.get('error');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
     // Purge sensitive params from URL immediately
     if (window.history.replaceState) {

@@ -428,6 +428,14 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
     throw new AppError("A shareable resume link is required to apply", 400);
   }
 
+  // Prevent IDOR: Ensure the provided resumeId actually belongs to the applicant
+  if (options.resumeId) {
+    const resume = await Resume.findOne({ _id: options.resumeId, user: applicantId });
+    if (!resume) {
+      throw new AppError("Invalid resume selected or you do not have permission to use this resume", 403);
+    }
+  }
+
   // Check for duplicate application
   const existing = await JobApplication.findOne({ job: jobId, applicant: applicantId });
   
@@ -435,6 +443,7 @@ export const applyToJob = async (jobId, applicantId, options = {}) => {
     if (existing.status === "withdrawn") {
       // Re-activate the withdrawn application
       existing.status = "pending";
+      existing.resume = options.resumeId || null;
       existing.resumeLink = options.resumeLink.trim();
       existing.coverNote = options.coverNote?.trim() || "";
       existing.statusHistory.push({ status: "pending", comment: "Application re-submitted after withdrawal" });
@@ -628,7 +637,13 @@ export const getJobApplications = async (jobId, recruiterId, statusOrParams, sor
     });
 
     if (resumeQueryConditions.length > 0) {
-      const matchingResumes = await Resume.find({ $or: resumeQueryConditions }).select("_id").lean();
+      // Optimize: Only search resumes that are attached to applications for this job
+      const currentAppResumes = await JobApplication.distinct("resume", { job: jobId });
+      const matchingResumes = await Resume.find({ 
+        _id: { $in: currentAppResumes },
+        $or: resumeQueryConditions 
+      }).select("_id").lean();
+      
       const resumeIds = matchingResumes.map(r => r._id);
       query.resume = { $in: resumeIds };
     }
@@ -641,7 +656,14 @@ export const getJobApplications = async (jobId, recruiterId, statusOrParams, sor
       ? filters.skills
       : filters.skills.split(",").map(s => s.trim());
     const skillRegexes = skillList.map(s => new RegExp(`^${escapeRegex(s)}$`, "i"));
-    const matchingResumes = await Resume.find({ skills: { $in: skillRegexes } }).select("_id").lean();
+    
+    // Optimize: Only search resumes that are attached to applications for this job
+    const currentAppResumes = await JobApplication.distinct("resume", { job: jobId });
+    const matchingResumes = await Resume.find({ 
+      _id: { $in: currentAppResumes },
+      skills: { $in: skillRegexes } 
+    }).select("_id").lean();
+    
     const resumeIds = matchingResumes.map(r => r._id);
     query.resume = { ...query.resume, $in: resumeIds };
   }

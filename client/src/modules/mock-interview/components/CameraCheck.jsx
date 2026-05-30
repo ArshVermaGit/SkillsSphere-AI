@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Video, VideoOff, Mic } from "lucide-react";
-
 const CameraCheck = ({ onStreamReady }) => {
   const videoRef = useRef(null);
   const [stream, setStream] = useState(null);

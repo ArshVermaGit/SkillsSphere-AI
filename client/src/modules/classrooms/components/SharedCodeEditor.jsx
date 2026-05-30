@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { Code2, Info, Play, Terminal, XCircle, Loader2 } from "lucide-react";
-
 export default function SharedCodeEditor({ socket, roomId, userRole }) {
   const [code, setCode] = useState(`// Welcome to SkillSphere AI Live Coding Classroom!\n// Type your collaborative code here...\n\nfunction helloWorld() {\n  console.log("Welcome to class!");\n}`);
   const [language, setLanguage] = useState("javascript");

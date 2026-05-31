@@ -1,16 +1,30 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import User from "../../database/models/User.js";
 import { OAuth2Client } from "google-auth-library";
 import { sendOTP } from "../../utils/emailService.js";
 import AppError from "../../utils/AppError.js";
+import { consumeAuthCode } from "../../utils/authCodeStore.js";
+import {
+  isLocalPasswordAccount,
+  LOCAL_EMAIL_REGISTERED_MESSAGE,
+} from "./googleAuthPolicy.js";
+
+export { LOCAL_EMAIL_REGISTERED_MESSAGE, isLocalPasswordAccount };
 
 const SALT_ROUNDS = 12;
 const OTP_EXPIRY_MINUTES = 5;
 const MAX_OTP_ATTEMPTS = 5;
 
-// Google OAuth client
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Google OAuth client (initialized lazily to avoid crash on import)
+let googleClient;
+const getGoogleClient = () => {
+  if (!googleClient) {
+    googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+  }
+  return googleClient;
+};
 
 // 🔐 JWT generator
 const buildAuthToken = (user) => {
@@ -19,7 +33,7 @@ const buildAuthToken = (user) => {
   }
 
   return jwt.sign(
-    { userId: user._id.toString(), role: user.role },
+    { userId: user._id.toString(), role: user.role, jti: crypto.randomUUID() },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
@@ -27,7 +41,7 @@ const buildAuthToken = (user) => {
 
 // 🔢 Generate OTP
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+  return crypto.randomInt(100000, 999999).toString();
 };
 
 // 📝 Register user
@@ -39,20 +53,33 @@ export const registerUserAndIssueToken = async ({ name, email, password, role })
   }
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+  const emailMode = process.env.EMAIL_SERVICE_MODE || "console";
+  const skipVerification = emailMode !== "smtp";
+
   const otp = generateOTP();
   const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
 
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
     role,
-    verificationToken: otp,
-    verificationTokenExpires: otpExpiry,
-    isVerified: false,
+    verificationToken: skipVerification ? undefined : hashedOtp,
+    verificationTokenExpires: skipVerification ? undefined : otpExpiry,
+    isVerified: skipVerification,
   });
 
-  await sendOTP(email, otp, "verification");
+  // In SMTP mode, send real OTP email; in console mode, auto-verify the user
+  if (!skipVerification) {
+    try {
+      await sendOTP(email, otp, "verification");
+    } catch (error) {
+      throw new AppError("Failed to send verification email. Please try again.", 500);
+    }
+  } else {
+    console.log(`[AUTH] User ${email} auto-verified (EMAIL_SERVICE_MODE=${emailMode})`);
+  }
 
   const token = buildAuthToken(user);
 
@@ -62,7 +89,7 @@ export const registerUserAndIssueToken = async ({ name, email, password, role })
       id: user._id.toString(),
       name: user.name,
       email: user.email,
-      isVerified: false,
+      isVerified: skipVerification,
     },
   };
 };
@@ -79,7 +106,7 @@ export const verifyUserEmail = async (email, otp) => {
     throw new AppError("Too many attempts. Please request a new OTP.", 429);
   }
 
-  const isMatch = user.verificationToken === otp;
+  const isMatch = await bcrypt.compare(otp, user.verificationToken);
   const isExpired = user.verificationTokenExpires < Date.now();
 
   if (!isMatch || isExpired) {
@@ -107,13 +134,18 @@ export const forgotPasswordRequest = async (email) => {
 
   const otp = generateOTP();
   const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
 
-  user.resetPasswordToken = otp;
+  user.resetPasswordToken = hashedOtp;
   user.resetPasswordExpires = otpExpiry;
   user.otpAttempts = 0;
   await user.save();
 
-  await sendOTP(email, otp, "reset");
+  try {
+    await sendOTP(email, otp, "reset");
+  } catch (error) {
+    throw new AppError("Failed to send reset code. Please try again.", 500);
+  }
 
   return { success: true, message: "A reset code has been sent to your email." };
 };
@@ -130,7 +162,7 @@ export const resetUserPassword = async (email, otp, newPassword) => {
     throw new AppError("Too many attempts. Please request a new code.", 429);
   }
 
-  const isMatch = user.resetPasswordToken === otp;
+  const isMatch = await bcrypt.compare(otp, user.resetPasswordToken);
   const isExpired = user.resetPasswordExpires < Date.now();
 
   if (!isMatch || isExpired) {
@@ -164,13 +196,18 @@ export const resendUserOTP = async (email) => {
 
   const otp = generateOTP();
   const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+  const hashedOtp = await bcrypt.hash(otp, SALT_ROUNDS);
 
-  user.verificationToken = otp;
+  user.verificationToken = hashedOtp;
   user.verificationTokenExpires = otpExpiry;
   user.otpAttempts = 0;
   await user.save();
 
-  await sendOTP(email, otp, "verification");
+  try {
+    await sendOTP(email, otp, "verification");
+  } catch (error) {
+    throw new AppError("Failed to resend verification code. Please try again.", 500);
+  }
 
   return { success: true, message: "A new verification code has been sent to your email." };
 };
@@ -182,12 +219,25 @@ export const loginUser = async (email, password) => {
     throw new AppError("Invalid email or password", 401);
   }
 
+  if (isLocalPasswordAccount(user) && !user.password) {
+    throw new AppError("Invalid email or password", 401);
+  }
+
+  if (!isLocalPasswordAccount(user)) {
+    throw new AppError(
+      "This account uses Google Sign-In. Please use Continue with Google.",
+      400,
+    );
+  }
+
   const isPasswordMatch = await bcrypt.compare(password, user.password);
   if (!isPasswordMatch) {
     throw new AppError("Invalid email or password", 401);
   }
 
-  if (!user.isVerified) {
+  // In console email mode, skip verification check for development convenience
+  const emailMode = process.env.EMAIL_SERVICE_MODE || "console";
+  if (!user.isVerified && emailMode === "smtp") {
     throw new AppError("Please verify your email before logging in", 403);
   }
 
@@ -204,9 +254,51 @@ export const loginUser = async (email, password) => {
   };
 };
 
+export const findOrCreateGoogleUser = async ({ email, name, picture }) => {
+  const existing = await User.findOne({ email });
+
+  if (existing) {
+    if (isLocalPasswordAccount(existing)) {
+      throw new AppError(LOCAL_EMAIL_REGISTERED_MESSAGE, 409);
+    }
+    return existing;
+  }
+
+  return User.create({
+    name,
+    email,
+    profilePic: picture,
+    role: "student",
+    provider: "google",
+    isVerified: true,
+  });
+};
+
+// Exchange a one-time auth code for a JWT
+export const exchangeAuthCodeForToken = async (code) => {
+  const userId = await consumeAuthCode(code);
+  if (!userId) return null;
+
+  const user = await User.findById(userId);
+  if (!user) return null;
+
+  const token = buildAuthToken(user);
+
+  return {
+    token,
+    user: {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+  };
+};
+
 // 🔐 Google Token Verification
 export const verifyGoogleToken = async (token) => {
   try {
+    const client = getGoogleClient();
     const ticket = await client.verifyIdToken({
       id_token: token,
       audience: process.env.GOOGLE_CLIENT_ID,

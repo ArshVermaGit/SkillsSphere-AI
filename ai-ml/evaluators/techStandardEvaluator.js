@@ -1,19 +1,26 @@
-import techKeywords from "../data/techKeywords.json" with { type: "json" };
+import techKeywords from "../config/keywords.js";
+import { normalizeSkillArray } from "../utils/skillNormalizer.js";
 
 /**
  * Evaluates the tech profile strength by checking for domain-specific skills.
  * Identifies if a profile is specialized or missing core tools for a domain.
  */
-export const techStandardEvaluator = ({ resumeText = "", weight = 0.15 }) => {
+export const techStandardEvaluator = ({ resumeText = "" }) => {
   const lowerText = resumeText.toLowerCase();
   const domainMatches = {};
-  const missingDomains = [];
+  const domainMissing = {};
 
   Object.keys(techKeywords).forEach(domain => {
-    const matches = techKeywords[domain].filter(skill => 
-      lowerText.includes(skill.toLowerCase())
+    // Normalize domain keywords to match our canonical forms
+    const normDomainKeywords = normalizeSkillArray(techKeywords[domain]);
+    
+    const matches = normDomainKeywords.filter(skill => 
+      lowerText.includes(skill) || 
+      (skill === 'nodejs' && lowerText.includes('node.js')) ||
+      (skill === 'csharp' && lowerText.includes('c#'))
     );
     domainMatches[domain] = matches;
+    domainMissing[domain] = normDomainKeywords.filter(skill => !matches.includes(skill));
   });
 
   const feedback = [];
@@ -41,16 +48,26 @@ export const techStandardEvaluator = ({ resumeText = "", weight = 0.15 }) => {
   if (domainMatches.frontend.length > 0 && domainMatches.backend.length === 0) {
     suggestions.push("As a Frontend dev, consider learning basic Backend (Node.js/SQL) to become Fullstack.");
   }
-  if ((domainMatches.frontend.length > 0 || domainMatches.backend.length > 0) && domainMatches.cloud_devops.length === 0) {
+  if ((domainMatches.frontend?.length > 0 || domainMatches.backend?.length > 0) && 
+      (domainMatches.cloud?.length === 0 && domainMatches.devops?.length === 0)) {
     suggestions.push("Add Cloud/DevOps skills (Docker, AWS) to demonstrate modern deployment knowledge.");
   }
 
   return {
+    key: "tech_standard",
+    label: "Technical Breadth",
     score,
-    weight,
-    domainMatches,
-    feedback,
-    suggestions,
-    name: "techStandard"
+    summary: score > 70 
+      ? "Well-rounded technical profile across multiple domains." 
+      : "The technical profile appears narrow; consider highlighting more cross-stack tools.",
+    details: {
+      domainMatches,
+      domainMissing,
+      feedback,
+      suggestions
+    },
+    meta: {
+      domainsDetected: domainsWithMatches.length
+    }
   };
 };

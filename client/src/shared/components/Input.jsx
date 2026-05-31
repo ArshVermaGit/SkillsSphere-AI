@@ -44,7 +44,7 @@ const Input = ({
   const inputType = isPassword ? (showPassword ? "text" : "password") : type;
 
   const baseInput = [
-    "w-full rounded-lg border bg-slate-800 px-3.5 py-2.5 text-sm text-white caret-white",
+    "w-full rounded-lg border bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-gray-900 dark:text-white caret-gray-900 dark:caret-white",
     "placeholder:text-gray-500 transition-all duration-150",
     "focus:outline-none focus:ring-2 focus:ring-offset-0",
     "autofill-fix",
@@ -52,10 +52,10 @@ const Input = ({
     (rightIcon || isPassword) ? "pr-10" : "",
     hasError
       ? "border-red-400 focus:ring-red-400 focus:border-red-400"
-      : "border-slate-600 focus:ring-blue-500 focus:border-blue-500",
+      : "border-gray-300 dark:border-slate-600 focus:ring-blue-500 focus:border-blue-500",
     disabled
-      ? "cursor-not-allowed bg-slate-800/50 text-slate-500 border-slate-700"
-      : "hover:border-slate-500",
+      ? "cursor-not-allowed bg-gray-100 dark:bg-slate-800/50 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-700"
+      : "hover:border-gray-400 dark:hover:border-slate-500",
   ]
     .filter(Boolean)
     .join(" ");
@@ -65,7 +65,7 @@ const Input = ({
       {label && (
         <label
           htmlFor={id}
-          className="text-sm font-medium text-gray-300 select-none"
+          className="text-sm font-medium text-gray-700 dark:text-gray-300 select-none"
         >
           {label}
           {required && (
@@ -103,7 +103,7 @@ const Input = ({
         {isPassword && !rightIcon ? (
           <button
             type="button"
-            className="absolute right-3 flex items-center text-slate-400 hover:text-slate-200 transition-colors bg-transparent border-none p-0 cursor-pointer"
+            className="absolute right-3 flex items-center text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors bg-transparent border-none p-0 cursor-pointer"
             onClick={() => setShowPassword(!showPassword)}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >

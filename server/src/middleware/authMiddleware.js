@@ -2,19 +2,19 @@ import jwt from "jsonwebtoken";
 import User from "../database/models/User.js";
 import AppError from "../utils/AppError.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import { isTokenBlacklisted } from "../utils/tokenBlacklist.js";
 
 /**
  * Middleware to protect routes - checks if user is logged in
  */
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
+  const authorizationHeader = req.headers.authorization;
 
   // 1) Check if token exists in headers
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    token = req.headers.authorization.split(" ")[1];
+  const bearerMatch = authorizationHeader?.match(/^Bearer\s+([^\s]+)$/);
+  if (bearerMatch) {
+    token = bearerMatch[1];
   }
 
   if (!token) {
@@ -27,8 +27,15 @@ export const protect = asyncHandler(async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 3) Check if user still exists
-    const currentUser = await User.findById(decoded.userId).select("-password");
+    // 3) Check if token has been revoked (logged out)
+    if (decoded.jti && await isTokenBlacklisted(decoded.jti)) {
+      return next(
+        new AppError("Token has been revoked. Please log in again.", 401)
+      );
+    }
+
+    // 4) Check if user still exists
+    const currentUser = await User.findById(decoded.userId).select("-password").lean();
     if (!currentUser) {
       return next(
         new AppError("The user belonging to this token no longer exists.", 401)
@@ -57,4 +64,36 @@ export const authorizeRoles = (...roles) => {
     }
     next();
   };
+};
+
+/**
+ * Verify a JWT token and return the matching User document.
+ * Used by Socket.io io.use() middleware to authenticate WebSocket connections.
+ * @param {string} token - JWT string from the socket handshake
+ * @returns {Promise<Object>} Authenticated user document (without password)
+ * @throws {Error} If token is missing, invalid, or user no longer exists
+ */
+export const verifySocketToken = async (token) => {
+  if (!token) {
+    throw new Error("Missing auth token");
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    throw new Error("Invalid auth token");
+  }
+
+  if (decoded.jti && await isTokenBlacklisted(decoded.jti)) {
+    throw new Error("Token has been revoked");
+  }
+
+  const user = await User.findById(decoded.userId).select("-password").lean();
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
 };

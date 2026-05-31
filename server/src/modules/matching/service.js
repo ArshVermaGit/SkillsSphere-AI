@@ -1,6 +1,10 @@
 import JobPosting from "../../database/models/JobPosting.js";
 import MatchResult from "../../database/models/MatchResult.js";
+import Notification from "../../database/models/Notification.js";
+import User from "../../database/models/User.js";
 import { runPipeline } from "../../../../ai-ml/pipeline/runPipeline.js";
+import { getIO } from "../../utils/socketIO.js";
+import mongoose from "mongoose";
 
 /**
  * Evaluate a resume against all open jobs and return ranked recommendations.
@@ -9,41 +13,150 @@ import { runPipeline } from "../../../../ai-ml/pipeline/runPipeline.js";
  * @param {Object} resume - The parsed resume data (Mongoose document)
  * @returns {Promise<Object>} The saved MatchResult document
  */
-export const evaluateMatches = async (user, resume) => {
-  // 1. Fetch all open jobs
-  const openJobs = await JobPosting.find({ status: "open" });
+export const evaluateMatches = async (user, resume, preFilteredJobs = null) => {
+  // 1. Normalize candidate skills from resume
+  const candidateSkills = (resume.skills || []).map(s => s.toLowerCase().trim());
 
-  const recommendations = [];
+  let openJobs;
 
-  // 2. Evaluate each job using the AI/ML pipeline
-  for (const job of openJobs) {
-    const pipelineResult = await runPipeline({
-      resumeData: resume,
-      jobSkills: job.skills,
-      jobDescription: job.description,
-    });
+  if (preFilteredJobs && Array.isArray(preFilteredJobs)) {
+    openJobs = preFilteredJobs;
+  } else {
+    // 2. Query open jobs that share at least one skill with the candidate (limit to 100 at DB level)
+    openJobs = await JobPosting.find({
+      status: "open",
+      skills: { $in: candidateSkills }
+    }).limit(100);
 
-    recommendations.push({
-      job: job._id,
-      score: pipelineResult.score,
-      breakdown: pipelineResult.breakdown,
-      skillMatch: pipelineResult.skillMatch,
-      keywordMatch: pipelineResult.keywordMatch,
-      experienceMatch: pipelineResult.experienceMatch,
-    });
+    // Fallback: If no jobs match by skill, fetch the 10 most recent open jobs
+    if (openJobs.length === 0) {
+      openJobs = await JobPosting.find({ status: "open" })
+        .sort({ createdAt: -1 })
+        .limit(10);
+    }
   }
+
+  // Rank and limit open jobs to top 20 based on skill overlap count to prevent resource starvation
+  const rankedJobs = openJobs.map(job => {
+    const jobSkillsNormalized = (job.skills || []).map(s => s.toLowerCase().trim());
+    const overlapCount = jobSkillsNormalized.filter(s => candidateSkills.includes(s)).length;
+    return { job, overlapCount };
+  });
+
+  rankedJobs.sort((a, b) => b.overlapCount - a.overlapCount);
+  openJobs = rankedJobs.slice(0, 20).map(item => item.job);
+
+  // 3. Evaluate each pre-filtered job using the AI/ML pipeline in batches
+  console.time(`Matching evaluation for ${openJobs.length} jobs`);
+  const recommendations = [];
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < openJobs.length; i += BATCH_SIZE) {
+    const batch = openJobs.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (job) => {
+        const pipelineResult = await runPipeline({
+          resumeData: resume,
+          jobSkills: job.skills,
+          jobDescription: job.description,
+        });
+
+        return {
+          job: job._id,
+          score: pipelineResult.score,
+          breakdown: pipelineResult.breakdown,
+          skillMatch: pipelineResult.skillMatch,
+          keywordMatch: pipelineResult.keywordMatch,
+          experienceMatch: pipelineResult.experienceMatch,
+        };
+      })
+    );
+    recommendations.push(...batchResults);
+  }
+  console.timeEnd(`Matching evaluation for ${openJobs.length} jobs`);
 
   // 3. Sort by score (highest first)
   recommendations.sort((a, b) => b.score - a.score);
 
-  // 4. Persist MatchResult for analytics and retrieval
-  const matchResult = await MatchResult.create({
-    user: user._id,
-    resume: resume._id,
-    recommendations,
-  });
+  // Cross-Role Notification System for Job Matching Skill Gaps
+  // If a candidate matches poorly (< 60%), generate alerts for Tutors and Recruiters
+  const io = getIO();
+  
+  const session = await mongoose.startSession();
+session.startTransaction();
 
-  return matchResult;
+try {
+  // Find tutor inside transaction with consistent sort
+  const tutor = await User.findOne({ role: "tutor" })
+    .sort({ createdAt: 1 })
+    .session(session);
+
+  const notificationsToEmit = [];
+  const notificationDocs = [];
+
+    for (const rec of recommendations) {
+      if (rec.score > 0 && rec.score < 60) {
+        const jobFull = openJobs.find(j => j._id.toString() === rec.job.toString());
+        
+        if (jobFull) {
+          // 1. Notify Recruiter (if known)
+          if (jobFull.recruiter) {
+            notificationDocs.push({
+              userId: jobFull.recruiter,
+              type: "skill_gap_alert",
+              title: "Candidate Skill Gap Alert",
+              message: `${user.name || "A candidate"} showed interest but has a skill gap for ${jobFull.title} (Score: ${rec.score}%).`,
+              relatedData: { jobId: jobFull._id, studentId: user._id, score: rec.score }
+            });
+          }
+
+          // 2. Notify a Tutor to intervene
+          // In a real system, find the specifically assigned tutor. Here we find any available tutor.
+          if (tutor) {
+            notificationDocs.push({
+              userId: tutor._id,
+              type: "skill_gap_alert",
+              title: "Student Needs Mentoring Intervention",
+              message: `${user.name || "A student"} scored ${rec.score}% for ${jobFull.title}. They need guidance to bridge this gap.`,
+              relatedData: { jobId: jobFull._id, studentId: user._id, score: rec.score }
+            });
+          }
+        }
+      }
+    }
+
+    if (notificationDocs.length > 0) {
+      const createdNotifs = await Notification.insertMany(notificationDocs, { session });
+      createdNotifs.forEach(notif => {
+        notificationsToEmit.push({ room: `user_${notif.userId}`, notif });
+      });
+    }
+
+    // 4. Persist MatchResult for analytics and retrieval
+    const matchResultDocs = await MatchResult.create([{
+      user: user._id,
+      resume: resume._id,
+      recommendations,
+    }], { session });
+    const matchResult = matchResultDocs[0];
+
+    await session.commitTransaction();
+
+    // Now safe to emit socket events
+    if (io) {
+      for (const { room, notif } of notificationsToEmit) {
+        io.to(room).emit("new-notification", notif);
+      }
+    }
+
+    return matchResult;
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Transaction aborted in evaluateMatches:", error);
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 /**
@@ -58,3 +171,10 @@ export const getLatestRecommendations = async (userId) => {
     .populate("recommendations.job")
     .lean();
 };
+
+const matchingService = {
+  evaluateMatches,
+  getLatestRecommendations
+};
+
+export default matchingService;

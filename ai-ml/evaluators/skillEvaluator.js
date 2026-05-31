@@ -1,19 +1,26 @@
-export const skillEvaluator = ({ resumeSkills = [], jobSkills = [] }) => {
-  // Normalize: lowercase, trim, unique
-  const normalize = (skills) => 
-    [...new Set(skills.map(s => s.toLowerCase().trim()).filter(Boolean))];
+import { normalizeSkillArray } from "../utils/skillNormalizer.js";
 
-  const normResume = normalize(resumeSkills);
-  const normJob = normalize(jobSkills);
+export const skillEvaluator = ({ resumeSkills = [], jobSkills = [] }) => {
+  // Use the optimized normalizer
+  const normResume = normalizeSkillArray(resumeSkills);
+  const normJob = normalizeSkillArray(jobSkills);
 
   if (jobSkills.length === 0 || normJob.length === 0) {
     return {
+      key: "skill_match",
+      label: "Skill Match",
       score: 0,
-      weight: 1.0,
-      feedback: ["No job skills provided for comparison"],
-      matchedSkills: [],
-      missingSkills: [],
-      extraSkills: normResume,
+      summary: "No job skills provided for comparison",
+      details: {
+        feedback: ["No job skills provided for comparison"],
+        matchedSkills: [],
+        missingSkills: [],
+        extraSkills: normResume,
+      },
+      meta: {
+        jobSkillCount: 0,
+        resumeSkillCount: normResume.length
+      }
     };
   }
 
@@ -36,12 +43,22 @@ export const skillEvaluator = ({ resumeSkills = [], jobSkills = [] }) => {
   if (extra.length > 0) feedback.push(`Consider prioritizing job-relevant skills over extras.`);
 
   return {
+    key: "skill_match",
+    label: "Skill Match",
     score,
-    weight: 1.0,
-    feedback,
-    matchedSkills: matched,
-    missingSkills: missing,
-    extraSkills: extra,
+    summary: matched.length > 0 
+      ? `Matched ${matched.length} out of ${normJob.length} required skills.`
+      : "No matching skills found for this position.",
+    details: {
+      matchedSkills: matched,
+      missingSkills: missing,
+      extraSkills: extra,
+      feedback
+    },
+    meta: {
+      jobSkillCount: normJob.length,
+      resumeSkillCount: normResume.length
+    }
   };
 };
 

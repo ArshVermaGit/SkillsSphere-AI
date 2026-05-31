@@ -34,31 +34,67 @@ SkillSphere AI aims to simplify the path from learning to hiring by giving users
 
 ## Core Features
 
-1. **Live Interactive Classrooms**  
+1. **Live Interactive Classrooms**
    Real-time learning sessions with video, chat, and collaboration.
 
-2. **AI Resume Analyzer**  
+2. **AI Resume Analyzer**
    Resume scoring with improvement suggestions. (Route: `/resume-analyzer`)
    - Drag & Drop / clipboard paste upload
    - ATS score with detailed analysis dashboard
    - Missing keyword identification
+   - **Industry Benchmarking Mode** — Analyzes your resume against market standards even without a specific Job Description (BM badge).
    - Live PDF document preview
 
-3. **Resume vs Job Description Matcher**  
+3. **Resume vs Job Description Matcher**
    ML-assisted comparison between candidate profile and role requirements.
+   - **Semantic Resume vs Job Description Matching** — Embedding-based semantic similarity scoring using Hugging Face Inference API (all-MiniLM-L6-v2, free tier)
+   - Complements keyword overlap with contextual alignment detection
+   - Cosine similarity comparison for conceptually related phrases (e.g., "workflow orchestration" vs "pipeline automation")
 
-4. **AI Mock Interview System**  
-   Interview practice with structured feedback for improvement.
+4. **AI Mock Interview System**
+   Adaptive interview practice with real-time AI evaluation. (Route: `/mock-interview`)
+   - Topic selection (React, Node.js, DSA) with difficulty levels
+   - 5-question sessions with randomized, non-repeating questions
+   - AI-powered scoring: technical accuracy, communication quality, and concept relevance
+   - Live score feedback after each answer
+   - Results dashboard with overall score ring, per-question breakdown, and weak concepts
+   - Interview history with paginated session tracking
+   - Python AI microservice for NLP evaluation (spaCy + sentence-transformers)
+   - Fail-soft mode: falls back to mock scores when AI service is unavailable
 
-5. **Skill Tracking Dashboard**  
-   Performance insights to help students and tutors track growth.
+5. **Interactive Learning Roadmaps**
+   Personalized skill-trees generated from AI analysis. (Route: `/roadmap`)
+   - Visual vertical progression path with interactive milestones
+   - Real-time "Job-Readiness" percentage tracking
+   - Direct integration with Dashboard for "Next Step" guidance
+   - Automatic sync with latest Resume Analysis feedback
 
-6. **Secure Authentication & Email Verification**  
+6. **Skill Tracking Dashboard**
+   Performance insights and "Next Learning Milestone" guidance to help students track growth.
+
+7. **AI Cover Letter Intelligence System**
+   AI-powered career application workflow extending the Resume Intelligence Engine.
+   - Generates ATS-friendly, role-specific cover letters using parsed resume data and Gemini AI
+   - Dynamic prompt engineering to prevent hallucinations and enforce professional tone
+   - **Tone Personalization**: Professional, Formal, Confident, Concise, Startup-Friendly, Creative
+   - **Multi-language Support**: English, Hindi, German, French, Spanish
+   - Instant regeneration with dynamic tone and language switching
+   - Professional PDF and TXT export with recruiter-ready formatting
+   - Persistent cover letter history dashboard for reusing generated content
+
+8. **Secure Authentication & Email Verification**
    OTP-based registration and password recovery system.
    - 6-digit email OTP verification
    - Secure Password Reset (Forgot Password) flow
    - Protection against user enumeration
    - OTP attempt limiting for security
+
+9. **AI Talent Finder & Candidate Direct Search**
+   Advanced talent discovery search engine for recruiters. (Route: `/recruiter/talent-finder`)
+   - Search the database of opted-in candidate resumes by name, email, skills, and background text
+   - Advanced filters for technical specializations, graduation year range, and minimum ATS scores
+   - Dynamic AI pipeline evaluation to compute a match scorecard against any of the recruiter's active jobs
+   - One-click recruiter invitation triggers that deliver real-time Socket.IO notifications to candidate dashboards
 
 ---
 
@@ -85,6 +121,7 @@ SkillSphere AI aims to simplify the path from learning to hiring by giving users
 - **Backend:** Node.js + Express.js
 - **Database:** MongoDB
 - **Intelligence Layer:** AI/ML for resume analysis, matching, and recommendations
+- **Interview AI Service:** Python + FastAPI + spaCy + sentence-transformers
 
 ---
 
@@ -93,16 +130,66 @@ SkillSphere AI aims to simplify the path from learning to hiring by giving users
 To simplify setup, you can now run the entire project using root-level scripts.
 
 ### Install all dependencies
-npm run install-all
 
-### Run the project (client + server together)
+```bash
+npm run install-all
+```
+
+This installs:
+
+- Root dependencies
+- Client dependencies
+- Server dependencies
+- Python microservice dependencies (creates `interview-ai-service/venv` and downloads spaCy model)
+
+### Run everything (client + server + Python microservice) from root
+
+```bash
 npm run dev
+```
 
 This will start:
+
 - Frontend (client)
 - Backend (server)
+- Interview AI Service (Python microservice on port 8000)
+
+### One command (first-time or fresh clone)
+
+```bash
+npm run quickstart
+```
+
+### Optional: run only client + server (no Python service)
+
+```bash
+npm run dev:web
+```
 
 > ⚠️ Backend requires environment variables to run properly. Refer to the Environment Setup section below.
+
+## 🐳 Run with Docker (Recommended)
+
+To avoid manual installation of Python dependencies, Node modules, and OS-level packages (like FFmpeg), you can run the entire stack using Docker.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+
+### Steps
+1. Clone the repository and navigate to the root directory.
+2. Ensure you have created your `.env` files in both the `server` and `interview-ai-service` directories (refer to `.env.example`).
+3. Run the following command from the root directory:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+Access the applications:
+- **Client**: [http://localhost:5173](http://localhost:5173)
+- **Server**: [http://localhost:5000](http://localhost:5000)
+- **AI Microservice**: [http://localhost:8000](http://localhost:8000)
+
+To stop the containers, press `Ctrl+C` or run `docker-compose down`.
 
 ## Scalable Folder Structure
 
@@ -112,17 +199,23 @@ The following structure keeps the project modular and easy to scale for new cont
 SkillSphere-AI/
 ├── client/                          # React frontend (Vite)
 │   ├── src/
-│   │   ├── modules/                 # Feature-based modules (Auth, Resumes, etc.)
+│   │   ├── modules/                 # Feature-based modules (Auth, Resumes, recruiter-jobs, etc.)
+│   │   │   └── recruiter-jobs/      # Talent Finder dashboard, page, services
 │   │   ├── shared/                  # Reusable UI components
 │   │   └── services/                # API service layer
 ├── server/                          # Express backend
 │   ├── src/
-│   │   ├── modules/                 # Backend business logic by domain
-│   │   ├── database/                # Mongoose models and connection
+│   │   ├── modules/                 # Backend business logic (Auth, Resumes, recruiter, etc.)
+│   │   │   └── recruiter/           # Talent Finder controller and routes
+│   │   ├── database/                # Mongoose models (User, Resume, JobApplication, LearningProgress)
 │   │   └── middleware/              # Auth, RBAC, and Upload handlers
 ├── ai-ml/                           # AI/ML intelligence layer
 │   ├── evaluators/                  # Skill, Keyword, and Experience matchers
 │   └── pipeline/                    # Unified analysis pipeline
+├── interview-ai-service/            # Python AI microservice (FastAPI)
+│   ├── routers/                     # API route handlers
+│   ├── services/                    # Whisper STT, NLP, Semantic scoring
+│   └── requirements.txt             # Python dependencies
 ├── docs/                            # Project documentation
 └── ...                              # Configuration and root files
 ```
@@ -142,12 +235,30 @@ SkillSphere-AI/
 - `POST /api/resume/analyze` (v2: uses latest-only upsert flow)
 - `GET /api/resume/me/latest`: fetch user's latest parsed resume (no raw resumeText)
 - `GET /api/resume/result/:id`
+- `POST /api/resume/:id/cover-letter`: Generate an AI cover letter
+- `GET /api/cover-letters`: Fetch user's cover letter history
+- `GET /api/roadmap/me`: fetch user's learning roadmap and progress
+- `POST /api/roadmap/sync`: sync roadmap with latest analysis suggestions
+- `PATCH /api/roadmap/update-topic`: update status of a specific roadmap milestone
+
+- `GET /api/recruiter/talent-finder`: search candidate directory of opted-in student resumes (Recruiter only; filters: `query`, `specializations`, `gradYearMin`, `gradYearMax`, `atsMin`, `limit`, `page`)
+- `POST /api/recruiter/match-candidate`: run Gemini AI matching pipeline on candidate's resume text against a specific job description (Recruiter only)
+- `POST /api/recruiter/invite-candidate`: send job application invitation to a candidate (Recruiter only; sends real-time socket notification)
 
 - `GET /uploads/:filename`
 - `POST /api/jobs`: create a new job (Recruiter only)
 - `GET /api/jobs`: list all published jobs (supports `designation`, `minSalary`, `maxSalary`, `postedWithin` filters)
 - `GET /api/jobs/recruiter`: list jobs posted by the authenticated recruiter
 - `GET /api/jobs/:id`: get job details
+
+- `GET /api/interviews/topics`: list interview topics with question counts
+- `POST /api/interviews/start`: start a new interview session
+- `GET /api/interviews/:id`: get session details
+- `POST /api/interviews/:id/answer`: submit an answer for evaluation
+- `POST /api/interviews/:id/complete`: end interview and calculate scores
+- `GET /api/interviews/:id/results`: get detailed results
+- `GET /api/interviews/history`: paginated interview history
+- `GET /api/interviews/ai-status`: check Python AI service health
 
 ### Why this structure works
 
@@ -157,87 +268,6 @@ SkillSphere-AI/
 - **Future-ready:** Supports adding new learning/career modules without major rewrites
 
 ---
-
-```md
-### Resume Analyzer Backend Progress
-
-Implemented:
-
-- Resume upload support using multer
-- Resume parsing using pdf-parse
-- Candidate information extraction from uploaded resumes
-- Skill comparison between resume skills and job description skills
-- Weighted skill score generation
-- Detection of matched skills, missing skills, and extra skills
-- Explainable feedback for resume vs JD matching
-- MongoDB persistence for parsed resume data and skill match results
-- Resume schema for storing uploaded file metadata and parsed candidate information
-- GET /api/resume/result/:id endpoint to fetch stored resume records
-- Reusable `ai-ml/evaluators/keywordEvaluator.js` for resume vs job description text
-- Keyword relevance analysis with matched keywords, missing keywords, and weighted keyword score (`weight` default `0.2`)
-- Optional `jobDescription` form field on `POST /api/resume/analyze` to run keyword evaluation alongside parsing
-- Reusable `ai-ml/evaluators/experienceEvaluator.js` for resume vs job description experience matching
-- Experience extraction supports years and months (examples: `18 months`, `1 year 6 months`, `2+ years`)
-- Weighted experience scoring with explainable feedback (`score`, `weight`, `candidateExperience`, `requiredExperience`, `experienceGap`)
-- Unit tests for experience evaluator at `ai-ml/evaluators/__tests__/experienceEvaluator.test.js`
-- `/api/resume/analyze` now includes `experienceMatch` in response and MongoDB resume records
-- **Latest-Only Resume Flow**: Implemented singleton resume pattern where each user keeps only one stored parsed record, with new uploads replacing the previous one
-- **Resume Service Layer**: Introduced `service.js` in the resumes module to manage upsert and ownership logic
-- **Data Privacy**: Enforced exclusion of `resumeText` from all resume API responses
-
-
-### Authentication & Security Progress
-
-Implemented:
-
-- OTP-based email verification using Nodemailer
-- Dual-mode email service (Console logging for dev, SMTP for production)
-- Secure password reset flow with enumeration protection
-- 6-digit OTP generation with 5-minute expiry logic
-- Brute-force protection via OTP attempt limiting (max 5 attempts)
-- Reusable `sendEmail` utility for system-wide notifications
-- Input validation using Zod schemas for all auth flows
-- JWT-based authentication for stateful sessions
-- Role-Based Access Control (RBAC) middleware (`student`, `tutor`, `recruiter`)
-- Secure Login endpoint with credential verification
-- Logout endpoint for client-side session termination
-- Get Current User endpoint (`/me`) for profile fetching
-- JWT verification middleware for route protection
-
-### Frontend & Shared UI Progress
-
-Implemented:
-
-- Standardized State Components: `LoadingState`, `EmptyState`, `ErrorState`
-- Common Page Layouts: `PageHeader` with support for gradient typography
-- Barrel exports for shared components to simplify module imports
-- Integration of shared states into `ResumeAnalyzerPage`
-- **New Feature: Job Description Integration**
-  - Added `TextArea` shared component for multi-line inputs
-  - Added JD input section to `ResumeAnalyzerPage` with paste and .txt upload support
-  - Integrated `resumeService` with real backend API calls using `FormData`
-  - Support for sending `jobDescription` alongside resume file for keyword relevance scoring
-
-### Recruiter Job Management Progress
-
-Implemented:
-
-- JobPosting schema with `experienceRequired`, `jobLevel`, and matching-ready fields
-- RBAC-protected Job Creation API for Recruiters
-- Publicly accessible Job Listing and Detail APIs
-- Ownership-based Job Update and Delete APIs
-- Populated recruiter information in job responses
-
-### Job Search & Filtering Progress
-
-Implemented:
-
-- **Dynamic Mongoose Query Builder**: Supports filtering by `minSalary`, `maxSalary`, `designation` (regex title search), and `postedWithin` (date range).
-- **Recency Filters**: Added logic for `1d`, `7d`, and `30d` timeframe filtering.
-- **Database Performance**: Implemented indexes for `title`, `salary`, `status`, and `createdAt` for optimized search.
-- **Refactored Routes**: Unified job discovery under `/api/jobs` while preserving recruiter management security.
-- **Terminal Test Suite**: Created `server/test-filters.js` for direct validation of filtering logic.
-```
 
 ## For Open-Source Contributors
 
@@ -287,7 +317,40 @@ npm install
 npm run dev
 ```
 
+### Interview AI Service (Python microservice)
+
+This service powers speech-to-text transcription and answer evaluation for the Mock Interview module. The Node backend can run without it (it falls back to mock scores), but for real AI evaluation you should start it locally.
+
+**Requirements:** Python 3.10+
+
+```bash
+cd interview-ai-service
+
+# Create virtual environment
+python -m venv venv
+
+# Activate
+# Linux/Mac:
+# source venv/bin/activate
+# Windows:
+# venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Download spaCy English model
+python -m spacy download en_core_web_sm
+
+# Run the API (default port 8000)
+python -m uvicorn main:app --reload --port 8000
+```
+
+Health check: `http://localhost:8000/health`
+
+Optional env var (defaults to `base`): `WHISPER_MODEL_SIZE=tiny|base|small|medium|large-v3`
+
 ## 🔐 Environment Variables Setup
+
 > ⚠️ The backend will not start without configuring the required environment variables.
 
 ### Server
@@ -305,13 +368,23 @@ cp .env.example .env
 - `JWT_SECRET`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
+- `GEMINI_API_KEY` (Required for AI Cover Letter Generation)
+- `REDIS_URL` (Required for caching API responses, e.g., redis://localhost:6379)
 
-- `EMAIL_SERVICE_MODE=console` (Use "smtp" for real emails)
-- `EMAIL_HOST=smtp.gmail.com`
-- `EMAIL_PORT=587`
-- `EMAIL_USER=your-email@gmail.com`
-- `EMAIL_PASS=your-app-password`
-- `EMAIL_FROM="SkillsSphere AI" <your-email@gmail.com>`
+```env
+# AI/ML Configuration (Required for semantic matching — free tier)
+HF_API_TOKEN=your_hugging_face_token
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# Email Setup (if using console/smtp directly in server)
+EMAIL_SERVICE_MODE=console
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-app-password
+EMAIL_FROM="SkillsSphere AI" <your-email@gmail.com>
 
 # Evaluator toggles and weights (optional)
 EVALUATOR_SKILL_MATCH_ENABLED=true
@@ -320,6 +393,12 @@ EVALUATOR_EXPERIENCE_MATCH_ENABLED=true
 EVALUATOR_SKILL_MATCH_WEIGHT=1
 EVALUATOR_KEYWORD_MATCH_WEIGHT=0.2
 EVALUATOR_EXPERIENCE_MATCH_WEIGHT=0.2
+
+# Interview AI Service (Python microservice for answer evaluation)
+INTERVIEW_AI_URL=http://localhost:8000
+INTERVIEW_AI_TIMEOUT=10000
+INTERVIEW_AI_TRANSCRIBE_TIMEOUT=30000
+```
 
 ### Client
 
@@ -332,9 +411,23 @@ cp .env.example .env
 
 2. For local development, keep:
 
+- `MONGO_URI` or `MONGODB_URI`
+- `PORT` (backend default: `5000`)
+- `JWT_SECRET` (required for JWT registration)
+- `JWT_EXPIRES_IN` (optional, default is `7d`)
+- `HF_API_TOKEN` (free — required for semantic resume-to-job-description matching, get at <https://huggingface.co/settings/tokens>)
 - `VITE_API_URL=http://localhost:5000`
 
 ## 🔐 Google OAuth Setup
+
+- `JWT_SECRET=skillsphere_dev_jwt_secret_1234567890abcdef`
+- `JWT_EXPIRES_IN=7d`
+- `EMAIL_SERVICE_MODE=console` (Use "smtp" for real emails)
+- `EMAIL_HOST=smtp.mailtrap.io`
+- `EMAIL_PORT=2525`
+- `EMAIL_USER=your_smtp_username`
+- `EMAIL_PASS=your_smtp_password`
+- `HF_API_TOKEN=hf_...` (Free — required for semantic resume matching)
 
 1. Open Google Cloud Console.
 2. Create/select your project.
@@ -374,6 +467,7 @@ To use real email notifications (OTP verification, password reset) via Gmail, fo
    - Click **Create**.
    - Copy the **16-character code** (e.g., `abcd efgh ijkl mnop`).
 3. **Update `server/.env`**:
+
    ```env
    EMAIL_SERVICE_MODE=smtp
    EMAIL_HOST=smtp.gmail.com
@@ -382,4 +476,12 @@ To use real email notifications (OTP verification, password reset) via Gmail, fo
    EMAIL_PASS=abcd efgh ijkl mnop
    EMAIL_FROM="SkillsSphere AI" <your-email@gmail.com>
    ```
+
 4. **Restart the server** to apply changes.
+
+### 📝 Testing Email Verification (Console Mode)
+
+For local development and testing without configuring an SMTP provider:
+1. Set `EMAIL_SERVICE_MODE=console` in `server/.env`.
+2. When registering a user, the server will output the 6-digit OTP directly to your terminal console instead of sending an email.
+3. Retrieve this OTP from the server command line logs and enter it in the frontend verification modal to complete the registration flow.

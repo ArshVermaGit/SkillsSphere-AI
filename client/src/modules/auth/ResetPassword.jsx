@@ -1,11 +1,34 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Input from "../../shared/components/Input";
 import Button from "../../shared/components/Button";
 import { KeyRound, ArrowLeft, CheckCircle } from "lucide-react";
+import { useToast } from "../../shared/components";
+import { API_URL } from "../../config/env";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
+import { reportError } from "../../utils/errorReporter";
+import { z } from "zod";
+
+const resetSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Please enter a valid email"),
+  otp: z.string().length(6, "OTP must be exactly 6 digits"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password")
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+const RESET_PASSWORD_ERROR_MESSAGE =
+  "Unable to reset password. Please try again or request a new reset link.";
+const RESET_PASSWORD_CONNECTION_MESSAGE =
+  "Unable to reset password right now. Please check your connection and try again.";
 
 const ResetPassword = () => {
+  useDocumentTitle("Reset Password");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
 
   const [form, setForm] = useState({
     email: "",
@@ -13,6 +36,15 @@ const ResetPassword = () => {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Extract email from URL if present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setForm((prev) => ({ ...prev, email: emailParam }));
+    }
+  }, [location]);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -36,67 +68,87 @@ const ResetPassword = () => {
 
   const validate = () => {
     const newErrors = {};
+    const result = resetSchema.safeParse(form);
 
-    if (!form.email.trim()) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Please enter a valid email";
-
-    if (!form.otp.trim()) newErrors.otp = "OTP is required";
-    else if (form.otp.length !== 6)
-      newErrors.otp = "OTP must be exactly 6 digits";
-
-    if (!form.newPassword)
-      newErrors.newPassword = "New password is required";
-    else if (form.newPassword.length < 8)
-      newErrors.newPassword = "Password must be at least 8 characters";
-
-    if (!form.confirmPassword)
-      newErrors.confirmPassword = "Please confirm your password";
-    else if (form.newPassword !== form.confirmPassword)
-      newErrors.confirmPassword = "Passwords do not match";
+    if (!result.success) {
+      result.error.errors.forEach((err) => {
+        if (!newErrors[err.path[0]]) {
+          newErrors[err.path[0]] = err.message;
+        }
+      });
+    }
 
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
-      // Mock loading — no backend call
-      setTimeout(() => {
-        setLoading(false);
-        setSuccess(true);
-        console.log("Reset password payload:", {
-          email: form.email,
-          otp: form.otp,
-          newPassword: form.newPassword,
+      try {
+        const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: form.email,
+            otp: form.otp,
+            newPassword: form.newPassword,
+          }),
         });
-      }, 2000);
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setSuccess(true);
+          showSuccessToast("Password reset successfully!");
+        } else {
+          const error = new Error("Password reset request failed");
+          reportError(error, {
+            source: "auth",
+            feature: "reset-password",
+            status: response.status,
+          }).catch(() => {});
+          showErrorToast(RESET_PASSWORD_ERROR_MESSAGE);
+          setErrors({ form: RESET_PASSWORD_ERROR_MESSAGE });
+        }
+      } catch (err) {
+        reportError(new Error("Password reset request could not be completed"), {
+          source: "auth",
+          feature: "reset-password",
+          reason: err?.name || "request-failed",
+        }).catch(() => {});
+        showErrorToast(RESET_PASSWORD_CONNECTION_MESSAGE);
+        setErrors({ form: RESET_PASSWORD_CONNECTION_MESSAGE });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] overflow-hidden relative p-5 box-border">
+    <div className="min-h-screen flex justify-center items-center bg-slate-50 dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] overflow-hidden relative p-5 box-border">
       <div className="relative z-10 w-full max-w-[420px]">
         {/* Background glow */}
-        <div className="absolute w-[500px] h-[500px] bg-blue-500/40 rounded-full blur-[120px] -top-[150px] -left-[150px] -z-10 animate-pulse"></div>
-        <div className="absolute w-[400px] h-[400px] bg-purple-500/40 rounded-full blur-[120px] -bottom-[120px] -right-[120px] -z-10 animate-pulse"></div>
+        <div className="absolute w-[520px] h-[520px] bg-blue-400/45 dark:bg-blue-500/40 rounded-full blur-[140px] dark:blur-[120px] -top-[150px] -left-[150px] -z-10 animate-pulse"></div>
+        <div className="absolute w-[420px] h-[420px] bg-purple-400/45 dark:bg-purple-500/40 rounded-full blur-[140px] dark:blur-[120px] -bottom-[120px] -right-[120px] -z-10 animate-pulse"></div>
 
         {success ? (
           /* ── Success State ── */
-          <div className="p-6 sm:p-[30px] rounded-[20px] backdrop-blur-[20px] bg-slate-900/70 border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.6)] animate-[fadeIn_0.8s_ease] text-center">
+          <div className="p-6 sm:p-[30px] rounded-[20px] backdrop-blur-[20px] bg-white/95 dark:bg-slate-900/70 border border-slate-200 dark:border-white/10 shadow-[0_20px_60px_rgba(15,23,42,0.14)] dark:shadow-[0_0_40px_rgba(0,0,0,0.6)] animate-[fadeIn_0.8s_ease] text-center">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
             </div>
-            <h2 className="text-white text-2xl font-semibold mb-2">
+            <h2 className="text-gray-900 dark:text-white text-2xl font-semibold mb-2">
               Password Reset Successful
             </h2>
-            <p className="text-slate-400 text-sm mb-6">
+            <p className="text-slate-600 dark:text-slate-400 text-sm mb-6">
               Your password has been updated successfully. You can now log in
               with your new password.
             </p>
@@ -111,7 +163,7 @@ const ResetPassword = () => {
         ) : (
           /* ── Reset Password Form ── */
           <form
-            className="p-6 sm:p-[30px] rounded-[20px] backdrop-blur-[20px] bg-slate-900/70 border border-white/10 shadow-[0_0_40px_rgba(0,0,0,0.6)] animate-[fadeIn_0.8s_ease]"
+            className="p-6 sm:p-[30px] rounded-[20px] backdrop-blur-[20px] bg-white/95 dark:bg-slate-900/70 border border-slate-200 dark:border-white/10 shadow-[0_20px_60px_rgba(15,23,42,0.14)] dark:shadow-[0_0_40px_rgba(0,0,0,0.6)] animate-[fadeIn_0.8s_ease]"
             onSubmit={handleSubmit}
             noValidate
           >
@@ -121,10 +173,10 @@ const ResetPassword = () => {
                 <KeyRound className="w-7 h-7 text-blue-400" />
               </div>
             </div>
-            <h2 className="text-center text-white mb-1 text-2xl font-semibold">
+            <h2 className="text-center text-gray-900 dark:text-white mb-1 text-2xl font-semibold">
               Reset Password
             </h2>
-            <p className="text-center text-slate-400 text-sm mb-6">
+            <p className="text-center text-slate-600 dark:text-slate-400 text-sm mb-6">
               Enter the details below to reset your password
             </p>
 
@@ -189,7 +241,7 @@ const ResetPassword = () => {
             </Button>
 
             {/* Footer */}
-            <p className="text-center mt-5 text-slate-400 text-[14px] flex items-center justify-center gap-1">
+            <p className="text-center mt-5 text-slate-600 dark:text-slate-400 text-[14px] flex items-center justify-center gap-1">
               <ArrowLeft className="w-4 h-4" />
               <Link to="/login" className="text-blue-400 hover:underline">
                 Back to Login

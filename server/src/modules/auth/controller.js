@@ -8,19 +8,29 @@ import {
 } from "../../validations/authValidation.js";
 
 import {
+  exchangeAuthCodeForToken,
   forgotPasswordRequest,
   loginUser,
   registerUserAndIssueToken,
   resendUserOTP,
   resetUserPassword,
-  verifyGoogleToken,
   verifyUserEmail,
+  verifyGoogleToken,
+  findOrCreateGoogleUser,
+  LOCAL_EMAIL_REGISTERED_MESSAGE,
 } from "./service.js";
 
 import jwt from "jsonwebtoken";
-import User from "../../database/models/User.js";
+import crypto from "crypto";
 import AppError from "../../utils/AppError.js";
 import asyncHandler from "../../utils/asyncHandler.js";
+import { blacklistToken } from "../../utils/tokenBlacklist.js";
+import { generateAuthCode } from "../../utils/authCodeStore.js";
+import {
+  getGoogleOAuthConfig,
+  GOOGLE_OAUTH_NOT_CONFIGURED_MESSAGE,
+  isGoogleOAuthConfigured,
+} from "../../config/googleOAuth.js";
 
 // 📝 Register User
 export const register = asyncHandler(async (req, res, next) => {
@@ -124,28 +134,15 @@ export const googleLogin = asyncHandler(async (req, res, next) => {
     return next(new AppError("Google token is required", 400));
   }
 
-  // ✅ Verify Google token
   const googleUser = await verifyGoogleToken(token);
-
-  // 🔍 Check if user exists
-  let user = await User.findOne({ email: googleUser.email });
-
-  // 🟢 Create new user if not exists
-  if (!user) {
-    user = await User.create({
-      name: googleUser.name,
-      email: googleUser.email,
-      profilePic: googleUser.picture,
-      role: "student",
-      provider: "google",
-    });
-  }
+  const user = await findOrCreateGoogleUser(googleUser);
 
   // 🔐 Generate JWT
   const jwtToken = jwt.sign(
     {
       userId: user._id.toString(),
       role: user.role,
+      jti: crypto.randomUUID(),
     },
     process.env.JWT_SECRET,
     {
@@ -170,7 +167,7 @@ export const googleLogin = asyncHandler(async (req, res, next) => {
 export const googleOAuthCallback = asyncHandler(async (req, res, next) => {
   const { code, state } = req.query;
   const frontendRedirectBase =
-    process.env.FRONTEND_URL || "http://localhost:5173";
+    process.env.FRONTEND_URL || "http://localhost:5174";
   const fallbackCallbackUrl = `${frontendRedirectBase}/auth/callback`;
   let callbackUrl = fallbackCallbackUrl;
 
@@ -199,15 +196,23 @@ export const googleOAuthCallback = asyncHandler(async (req, res, next) => {
     );
   }
 
+  if (!isGoogleOAuthConfigured()) {
+    return res.redirect(
+      `${callbackUrl}?error=${encodeURIComponent(GOOGLE_OAUTH_NOT_CONFIGURED_MESSAGE)}`,
+    );
+  }
+
+  const { clientId, clientSecret, redirectUri } = getGoogleOAuthConfig();
+
   // Exchange code for access token
   const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
   });
@@ -226,28 +231,42 @@ export const googleOAuthCallback = asyncHandler(async (req, res, next) => {
   );
   const googleUser = await userRes.json();
 
-  // Find or create user in your DB
-  let user = await User.findOne({ email: googleUser.email });
-  if (!user) {
-    user = await User.create({
-      name: googleUser.name,
-      email: googleUser.email,
-      profilePic: googleUser.picture,
-      role: "student",
-      provider: "google",
-      isVerified: true,
-    });
+  let user;
+  try {
+    user = await findOrCreateGoogleUser(googleUser);
+  } catch (error) {
+    const message =
+      error instanceof AppError
+        ? error.message
+        : LOCAL_EMAIL_REGISTERED_MESSAGE;
+    return res.redirect(
+      `${callbackUrl}?error=${encodeURIComponent(message)}`,
+    );
   }
 
-  // Generate your app's JWT
-  const jwtToken = jwt.sign(
-    { userId: user._id.toString(), role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" },
-  );
+  // Generate a short-lived one-time auth code (never expose JWT in URL)
+  const authCode = await generateAuthCode(user._id.toString());
 
-  // Redirect to frontend with ONLY the token (no user data in URL)
-  res.redirect(`${callbackUrl}?token=${jwtToken}`);
+  res.redirect(`${callbackUrl}?code=${authCode}`);
+});
+
+// Exchange one-time auth code for JWT (never expose token in URL)
+export const exchangeOAuthCode = asyncHandler(async (req, res, next) => {
+  const { code } = req.body;
+  if (!code) {
+    return next(new AppError("Authorization code is required", 400));
+  }
+
+  const result = await exchangeAuthCodeForToken(code);
+  if (!result) {
+    return next(new AppError("Invalid or expired authorization code", 401));
+  }
+
+  return res.status(200).json({
+    success: true,
+    token: result.token,
+    user: result.user,
+  });
 });
 
 // 👤 Get Current User
@@ -260,6 +279,20 @@ export const getMe = asyncHandler(async (req, res, next) => {
 
 // 🚪 Logout
 export const logout = asyncHandler(async (req, res, next) => {
+  // Extract token from Authorization header and blacklist its JTI
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer")) {
+    const token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.decode(token);
+      if (decoded && decoded.jti && decoded.exp) {
+        blacklistToken(decoded.jti, decoded.exp);
+      }
+    } catch {
+      // Token decode failure is non-fatal for logout
+    }
+  }
+
   res.status(200).json({
     success: true,
     message: "Logged out successfully",

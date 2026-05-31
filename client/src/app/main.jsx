@@ -6,15 +6,30 @@ import store from '../store/index';
 import App from './App.jsx';
 import './index.css';
 import { ToastProvider } from '../shared/components';
+import ErrorBoundary from '../components/ErrorBoundary.jsx';
+import { ThemeProvider } from '../shared/contexts/ThemeContext.jsx';
+import { suppressReactScriptTagWarning } from '../utils/logger';
+
+suppressReactScriptTagWarning();
+
+const savedTheme =
+  localStorage.getItem("skillssphere.theme") || "light";
+
+document.documentElement.classList.toggle("dark", savedTheme === "dark");
+document.documentElement.classList.toggle("light", savedTheme === "light");
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Provider store={store}>
-      <BrowserRouter>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <ToastProvider>
+            <ErrorBoundary>
+              <App />
+            </ErrorBoundary>
+          </ToastProvider>
+        </BrowserRouter>
+      </ThemeProvider>
     </Provider>
   </React.StrictMode>
 );

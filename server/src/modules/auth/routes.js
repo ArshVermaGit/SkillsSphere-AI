@@ -1,7 +1,13 @@
 import express from "express";
 import { protect } from "../../middleware/authMiddleware.js";
-import { authRateLimiter } from "../../middleware/rateLimiter.js";
+import { authRateLimiter, otpRateLimiter } from "../../middleware/rateLimiter.js";
 import {
+  buildGoogleAuthUrl,
+  GOOGLE_OAUTH_NOT_CONFIGURED_MESSAGE,
+  isGoogleOAuthConfigured,
+} from "../../config/googleOAuth.js";
+import {
+  exchangeOAuthCode,
   forgotPassword,
   getMe,
   googleLogin,
@@ -16,12 +22,23 @@ import {
 
 const router = express.Router();
 
-// 👤 Get Current User
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current authenticated user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user data
+ */
 router.get("/me", protect, getMe);
 
 // Initiate Google OAuth
 router.get("/google", (req, res) => {
-  const envFrontendOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
+  const envFrontendOrigin = getFrontendUrl();
   const refererHeader = req.get("referer");
   let inferredFrontendOrigin = envFrontendOrigin;
 
@@ -42,25 +59,89 @@ router.get("/google", (req, res) => {
   const state = encodeURIComponent(
     Buffer.from(redirectTarget, "utf8").toString("base64"),
   );
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_CALLBACK_URL}&response_type=code&scope=email%20profile&state=${state}`;
-  res.redirect(url);
+
+  if (!isGoogleOAuthConfigured()) {
+    console.error("[AUTH] Google OAuth env vars are missing in server/.env");
+    return res.redirect(
+      `${redirectTarget}?error=${encodeURIComponent(GOOGLE_OAUTH_NOT_CONFIGURED_MESSAGE)}`,
+    );
+  }
+
+  res.redirect(buildGoogleAuthUrl({ state }));
 });
 
 // Callback from Google
 router.get("/google/callback", googleOAuthCallback);
 
-// 📝 Register & Auth (Rate Limited)
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *               - role
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [student, recruiter, admin]
+ *     responses:
+ *       201:
+ *         description: User registered
+ */
 router.post("/register", authRateLimiter, register);
-router.post("/verify-email", authRateLimiter, verifyEmail);
+router.post("/verify-email", otpRateLimiter, authRateLimiter, verifyEmail);
 router.post("/forgot-password", authRateLimiter, forgotPassword);
 router.post("/reset-password", authRateLimiter, resetPassword);
 router.post("/resend-otp", authRateLimiter, resendOTP);
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ */
 router.post("/login", authRateLimiter, login);
 
 // 🚪 Logout
-router.post("/logout", logout);
+router.post("/logout", protect, logout);
 
 // 🔐 Google Login
 router.post("/google", googleLogin);
+
+// Exchange one-time auth code for JWT
+router.post("/exchange-code", authRateLimiter, exchangeOAuthCode);
 
 export default router;

@@ -27,6 +27,15 @@ const analysisHistorySchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.Mixed],
       default: [],
     },
+    breakdown: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+    mode: {
+      type: String,
+      enum: ["match", "benchmark"],
+      default: "match",
+    },
   },
   {
     timestamps: true,

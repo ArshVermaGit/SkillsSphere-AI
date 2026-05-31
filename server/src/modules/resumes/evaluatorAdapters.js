@@ -1,6 +1,7 @@
 import { experienceEvaluator as runExperienceEvaluator } from "../../../../ai-ml/evaluators/experienceEvaluator.js";
 import { keywordEvaluator as runKeywordEvaluator } from "../../../../ai-ml/evaluators/keywordEvaluator.js";
 import { skillEvaluator as runSkillEvaluator } from "../../../../ai-ml/evaluators/skillEvaluator.js";
+import { semanticEvaluator as runSemanticEvaluator } from "../../../../ai-ml/evaluators/semanticEvaluator.js";
 
 const round = (value) => Math.round(value * 100) / 100;
 
@@ -103,9 +104,31 @@ export const experienceMatchEvaluator = {
   },
 };
 
+export const semanticMatchEvaluator = {
+  key: "semanticMatch",
+  evaluate: async (context = {}) => {
+    const result = await runSemanticEvaluator({
+      resumeText: context.resumeText || "",
+      jobDescription: context.jobDescription || "",
+    });
+
+    return {
+      key: result.key,
+      label: result.label,
+      score: result.score,
+      weight: result.weight,
+      weightedScore: weightedScore(result),
+      summary: result.feedback,
+      details: {},
+      meta: {},
+    };
+  },
+};
+
 export const resumeEvaluatorAdapters = [
   skillMatchEvaluator,
   keywordMatchEvaluator,
   experienceMatchEvaluator,
+  semanticMatchEvaluator,
 ];
 

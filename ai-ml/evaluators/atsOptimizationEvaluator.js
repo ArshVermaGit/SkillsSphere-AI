@@ -1,29 +1,48 @@
+import { normalizeSkillArray } from "../utils/skillNormalizer.js";
+
 /**
  * Evaluates ATS compatibility by checking for required sections, 
  * contact information, and formatting hygiene based on parsed data.
  */
-export const atsOptimizationEvaluator = ({ resumeData, weight = 0.15 }) => {
+export const atsOptimizationEvaluator = ({ resumeData }) => {
   const {
     experience = [],
     education = [],
-    skills = [],
+    skills: rawSkills = [],
     email,
     phone,
     linkedin,
+    github,
+    portfolio,
     resumeText = ""
   } = resumeData;
+
+  const skills = normalizeSkillArray(rawSkills);
 
   const sectionResults = {
     experience: experience.length > 0,
     education: education.length > 0,
     skills: skills.length > 0,
-    summary: /summary|profile|objective|about me/gi.test(resumeText),
+    summary: /^[^a-z]*(summary|professional summary|profile|professional profile|objective|about\s+me)[^a-z]*$/im.test(resumeText),
   };
 
-  const contactResults = {
-    email: !!email,
-    phone: !!phone,
-    linkedin: !!linkedin,
+  // Fallback to regex detection from resumeText when structured fields are missing
+  const emailFromText = /[\w.+-]+@[\w-]+\.[a-z]{2,}/i.test(resumeText); 
+  const phoneFromText = /(\+\d{1,3}[\s-]?)?\d[\d\s-]{7,}/.test(resumeText); 
+  const portfolioFromText = /(portfolio|https?:\/\/(www\.)?[\w-]+\.[a-z]{2,}[^\s]*)/i.test(resumeText);
+  const linkedinUrlDetected = /linkedin\.com\/in\/[\w-]+|linkedin\.com\/company\/[\w-]+/i.test(resumeText);
+  const githubUrlDetected = /github\.com\/[\w-]+/i.test(resumeText);
+  const hasLinkedinPlaceholder = /\blinkedin\b/i.test(resumeText) && !linkedinUrlDetected;
+  const hasGithubPlaceholder = /\bgithub\b/i.test(resumeText) && !githubUrlDetected;
+  const linkedinFromText = linkedinUrlDetected || hasLinkedinPlaceholder;
+  const githubFromText = githubUrlDetected || hasGithubPlaceholder;
+
+  const contactResults = { 
+    email: !!email || emailFromText,
+    phone: !!phone || phoneFromText,
+    linkedin: !!linkedin || linkedinFromText, 
+    github: !!github || githubFromText,
+    portfolio: !!portfolio || portfolioFromText,
   };
 
   // Scoring
@@ -52,6 +71,16 @@ export const atsOptimizationEvaluator = ({ resumeData, weight = 0.15 }) => {
     suggestions.push(`Ensure your ${missingContact.join(" and ")} are visible at the top.`);
   }
 
+  if (hasLinkedinPlaceholder || hasGithubPlaceholder) {
+  feedback.push(
+    "Embedded hyperlinks detected. Some ATS systems may not extract hidden profile URLs correctly."
+  );
+
+  suggestions.push(
+    "Use visible LinkedIn/GitHub URLs instead of embedded hyperlinks for better ATS compatibility."
+  );
+}
+
   // Formatting Hygiene (Bonus/Penalty)
   const hasTables = /<table|\[table\]/gi.test(resumeText);
   if (hasTables) {
@@ -60,14 +89,23 @@ export const atsOptimizationEvaluator = ({ resumeData, weight = 0.15 }) => {
     suggestions.push("Use simple text blocks instead of nested tables for better parsing.");
   }
 
+  const finalScore = Math.max(0, Math.min(100, Math.round(score)));
+
   return {
-    score: Math.max(0, Math.min(100, Math.round(score))),
-    weight,
-    sectionResults,
-    contactResults,
-    feedback,
-    suggestions,
-    name: "atsOptimization"
+    key: "ats_optimization",
+    label: "ATS Optimization",
+    score: finalScore,
+    summary: finalScore > 80 
+      ? "Your resume format is highly ATS-friendly." 
+      : `Missing ${missingSections.length + missingContact.length} optimization elements.`,
+    details: {
+      sectionResults,
+      contactResults,
+      feedback,
+      suggestions
+    },
+    meta: {
+      hasTables
+    }
   };
 };
-

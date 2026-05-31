@@ -4,6 +4,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowLeft, Edit3 } from "lucide-react";
 import Navbar from "../../../shared/landing/Navbar";
 import Footer from "../../../modules/landing/components/Footer";
+
 import JobPostingForm from "../components/JobPostingForm";
 import LoadingState from "../../../shared/components/LoadingState";
 import { updateJobPosting, getJobPostingById } from "../services/jobPostingService";
@@ -116,9 +117,9 @@ const EditJobPostingPage = () => {
             </div>
           )}
         </div>
-        </div>
-      <Footer />
-    </div>
+      </div>
+          <Footer />
+    </main>
   );
 };
 

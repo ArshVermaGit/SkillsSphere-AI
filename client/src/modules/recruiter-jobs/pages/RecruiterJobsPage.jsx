@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Plus, Briefcase, Search, ArrowLeft } from "lucide-react";
 import Navbar from "../../../shared/landing/Navbar";
 import Footer from "../../../modules/landing/components/Footer";
+
 import Button from "../../../shared/components/Button";
 import Input from "../../../shared/components/Input";
 import LoadingState from "../../../shared/components/LoadingState";
@@ -290,8 +291,8 @@ const RecruiterJobsPage = () => {
           />
         )}
       </div>
-      <Footer />
-    </div>
+          <Footer />
+    </main>
   );
 };
 

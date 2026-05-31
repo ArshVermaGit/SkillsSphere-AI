@@ -5,6 +5,7 @@ import { PlayCircle, PauseCircle, Save, ArrowLeft, MessageSquare, CheckCircle, A
 import { apiRequest } from "../../../services/apiClient.js";
 import Navbar from "../../../shared/landing/Navbar";
 import Footer from "../../../modules/landing/components/Footer";
+
 import Input from "../../../shared/components/Input";
 import TextArea from "../../../shared/components/TextArea";
 import { API_URL } from "../../../config/env";
@@ -258,7 +259,7 @@ const TutorInterviewConsole = () => {
           </div>
         </div>
       </div>
-      <Footer />
+          <Footer />
     </div>
   );
 };

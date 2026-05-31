@@ -54,7 +54,7 @@ export default function gapAnalyzer({
   }
 
   // 4. 🏛️ Domain Specialization
-  if (techStandard?.score < 60) {
+  if ((techStandard?.score ?? Infinity) < 60) {
     techStandard.suggestions.forEach(s => categorizedSuggestions.strategic.push(s));
   }
 

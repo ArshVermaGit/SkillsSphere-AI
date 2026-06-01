@@ -584,3 +584,11 @@ Fetches the detailed resource 9 for the tutor dashboard.
 All tutor routes must be wrapped in `<ProtectedRoute requiredRole="tutor">`. The backend verifies the JWT role field before allowing access to `/api/tutor/*` endpoints.
 
 *(End of Tutor Module Documentation)*
+
+
+## Global Infrastructure & Security Implementations
+
+### Architecture Stability
+- **Backend Port Resolution**: Critical `EADDRINUSE` and backend boot crashes that previously caused instability in the live classroom Socket.io server have been fully patched.
+- **Seamless Navigation**: The Tutor module leverages the platform-wide `TopLoadingBar` and global Navbar/Footer, guaranteeing tutors see immediate visual feedback when transitioning between the heavy Analytics and Interview Lobby pages.
+- **Centralized Logger (`logger.js`)**: Raw `console.log` usage is removed globally. The Tutor module uses the secure logger to track WebRTC/Socket handshake failures without exposing internal IP addresses or student PII.

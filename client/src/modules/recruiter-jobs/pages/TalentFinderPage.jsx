@@ -51,6 +51,8 @@ import { useDebounce } from '../../../shared/hooks/useDebounce';
  * Styling dictionaries mapping semantic match category labels 
  * to dynamic tailwind-accessible glassmorphism border tags.
  */
+import logger from "../../../utils/logger";
+
 const matchCategoryStyles = {
   "Excellent Match": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
   "Moderate Match": "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
@@ -156,7 +158,8 @@ const TalentFinderPage = () => {
         }
       } catch (err) {
         console.error("[Workspace Exception] Error retrieving job listings registry:", err);
-      } finally {
+        logger.error("Failed to load recruiter jobs:", err);
+*      } finally {
         setJobsLoading(false);
       }
     };

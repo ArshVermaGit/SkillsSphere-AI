@@ -553,3 +553,16 @@ The following block details edge case handling and strict type checking for inte
 }
 ```
 
+
+
+## Global UI Infrastructure & Layout Strategy
+
+### Universal Components
+- **Global Navbar & Footer**: The Navbar and Footer components have been elevated to the global layout level. This ensures a consistent, unbroken header/footer experience across all internal dashboards and external landing pages, preventing layout thrashing during navigation.
+- **TopLoadingBar Integration**: A global `<TopLoadingBar />` has been integrated into the core layout. This provides seamless, Youtube-style visual feedback during lazy-loaded route transitions, eliminating jarring white screens.
+
+### Component Stability
+- **Loading State Refinements**: Loading spinners and states have been repositioned to prevent layout shifts.
+- **Button Stability**: `Button.jsx` has been optimized to prevent double-click race conditions and ensure padding remains consistent when transitioning into a loading state.
+- **Accessible Routing**: Imperative `useNavigate()` calls in forms have been replaced with semantic `<Link>` components to improve SEO, right-click behavior, and screen reader accessibility.
+- **Form State Normalization**: Component state nomenclature is standardized across forms (using `formData`) to prevent naming collisions and improve clarity.

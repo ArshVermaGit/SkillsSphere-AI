@@ -7,7 +7,7 @@ import CameraCheck from "../components/CameraCheck";
 import PersonaSelector from "../components/PersonaSelector";
 import Button from "../../../shared/components/Button";
 import Select from "../../../shared/components/Select";
-import { Play, GraduationCap, History, Loader2, Sparkles, Zap, ChevronRight, ArrowLeft } from "lucide-react";
+import { Play, GraduationCap, History, Loader2, Sparkles, ArrowLeft, Brain, Briefcase, Zap, ChevronRight } from "lucide-react";
 import { getTopics, startSession } from "../services/interviewService";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
@@ -85,6 +85,14 @@ const InterviewLobby = () => {
 
       <main className="relative z-10 pt-8 pb-12 max-w-[1200px] mx-auto px-4 sm:px-8 min-h-[calc(100vh-80px)] flex flex-col gap-10">
         
+        {/* Floating Icons Background */}
+        <div className="absolute top-24 left-[2%] xl:-left-[5%] hidden lg:flex items-center justify-center w-16 h-16 bg-white dark:bg-surface rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-white/5 opacity-80 pointer-events-none z-0 hover:opacity-100 transition-opacity animate-[float_6s_ease-in-out_infinite]">
+          <Briefcase size={28} className="text-purple-500" />
+        </div>
+        <div className="absolute top-36 right-[2%] xl:-right-[5%] hidden lg:flex items-center justify-center w-16 h-16 bg-white dark:bg-surface rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-white/5 opacity-80 pointer-events-none z-0 hover:opacity-100 transition-opacity animate-[float_7s_ease-in-out_infinite_reverse]">
+          <Brain size={28} className="text-indigo-500" />
+        </div>
+
         {/* Back to Dashboard Link */}
         <div className="-mt-4 mb-2 flex">
           <Link 
@@ -115,10 +123,10 @@ const InterviewLobby = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           
           {/* Left Column: Device & Focus Area */}
-          <div className="lg:col-span-7 flex flex-col gap-6 w-full animate-[slideRight_0.6s_ease-out]">
+          <div className="lg:col-span-7 flex flex-col gap-6 w-full h-full animate-[slideRight_0.6s_ease-out]">
             <CameraCheck onStreamReady={setIsMediaReady} />
             
             {/* Focus Area Card */}
@@ -169,14 +177,14 @@ const InterviewLobby = () => {
           </div>
 
           {/* Right Column: Persona & Start Action */}
-          <div className="lg:col-span-5 flex flex-col gap-6 w-full animate-[slideLeft_0.6s_ease-out]">
+          <div className="lg:col-span-5 flex flex-col gap-6 w-full h-full animate-[slideLeft_0.6s_ease-out]">
             <PersonaSelector 
               selectedPersona={selectedPersona} 
               onSelect={setSelectedPersona} 
             />
 
             {/* Launch Console */}
-            <div className="relative p-1 rounded-[2rem] bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-emerald-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)] group">
+            <div className="relative p-1 rounded-[2rem] bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-emerald-500/20 shadow-[0_0_30px_rgba(99,102,241,0.05)] group mt-auto">
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-20 group-hover:opacity-40 blur-xl transition-opacity duration-500 rounded-[2rem]" />
               
               <div className="relative bg-white dark:bg-surface backdrop-blur-2xl rounded-[1.85rem] p-6 sm:p-8 flex flex-col items-center justify-center border border-white/40 dark:border-border">

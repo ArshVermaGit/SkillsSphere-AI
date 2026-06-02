@@ -349,54 +349,66 @@ const MyApplicationsPage = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#d8dde5] dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] text-gray-900 dark:text-slate-100 flex flex-col pt-24">
+    <main className="min-h-screen bg-[var(--background)] dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] text-gray-900 dark:text-slate-100 flex flex-col pt-24">
       <Navbar />
 
 
 
-      <div className={`container mx-auto px-4 pb-12 flex-1 ${viewMode === 'list' ? 'max-w-4xl' : 'max-w-7xl'}`}>
-        
-        {/* Header and Toggle */}
-        <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
+      <div className="container mx-auto px-4 pb-12 flex-1 relative">
+        <div className={`w-full mx-auto relative z-10 ${viewMode === 'list' ? 'max-w-[1200px]' : 'max-w-[1400px]'}`}>
+          
+          {/* Back to Dashboard Link */}
+          <div className="py-6">
             <Link 
               to="/dashboard" 
-              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:text-blue-400 mb-4 transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
             >
               <ArrowLeft size={16} />
               Back to Dashboard
             </Link>
-            <h1 className="text-3xl md:text-4xl font-black mb-2 tracking-tight">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 dark:from-blue-400 to-emerald-600 dark:to-emerald-400">My</span> Applications
+          </div>
+
+          {/* Header */}
+          <div className="mb-12 text-center max-w-3xl mx-auto relative pt-4">
+            <div className="relative flex flex-col items-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold tracking-wider uppercase mb-6 border border-blue-100 dark:border-blue-800/50">
+                <Briefcase size={14} /> TRACK YOUR PROGRESS
+              </div>
+            </div>
+
+            <h1 className="text-5xl md:text-6xl font-black mb-6 tracking-tight leading-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400">My</span> Applications
             </h1>
-            <p className="text-gray-500 dark:text-slate-400 text-sm font-medium">
+            <p className="text-lg text-gray-600 dark:text-slate-400 font-medium">
               Track and manage all the jobs you&apos;ve applied to
             </p>
           </div>
 
-          <div className="flex items-center p-1 bg-white dark:bg-slate-900/50 border border-gray-200 dark:border-white/10 rounded-xl backdrop-blur-sm shadow-sm dark:shadow-none">
-            <button
-              onClick={() => { setViewMode("list"); setCurrentPage(1); }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-                viewMode === "list"
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <List size={16} /> List View
-            </button>
-            <button
-              onClick={() => { setViewMode("board"); }}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-                viewMode === "board"
-                  ? "bg-blue-600 text-white shadow-lg"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5"
-              }`}
-            >
-              <LayoutGrid size={16} /> Board View
-            </button>
+          {/* View Toggle */}
+          <div className="flex justify-center mb-12">
+            <div className="flex items-center p-1 bg-white dark:bg-surface/50 border border-border rounded-xl backdrop-blur-sm shadow-sm">
+              <button
+                onClick={() => { setViewMode("list"); setCurrentPage(1); }}
+                className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg transition-all ${
+                  viewMode === "list"
+                    ? "bg-brand-600 text-white shadow-lg"
+                    : "text-text-muted hover:text-text-main hover:bg-surface-hover"
+                }`}
+              >
+                <List size={16} /> List View
+              </button>
+              <button
+                onClick={() => { setViewMode("board"); }}
+                className={`flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg transition-all ${
+                  viewMode === "board"
+                    ? "bg-brand-600 text-white shadow-lg"
+                    : "text-text-muted hover:text-text-main hover:bg-surface-hover"
+                }`}
+              >
+                <LayoutGrid size={16} /> Board View
+              </button>
+            </div>
           </div>
-        </div>
 
         {/* Content */}
         {loading ? (
@@ -513,6 +525,7 @@ const MyApplicationsPage = () => {
             })}
           </div>
         )}
+        </div>
       </div>
 
       <ConfirmDialog

@@ -541,7 +541,7 @@ export default function ClassroomRoom() {
             )}
 
             {/* Main workspace container */}
-            <div className="flex-1 bg-gray-50/50 dark:bg-slate-900/40 rounded-[2rem] overflow-hidden p-6 border border-gray-200 dark:border-slate-800/60 shadow-inner flex flex-col min-h-0">
+            <div className={`flex-1 overflow-hidden flex flex-col min-h-0 ${activeWorkspace === "video" ? "bg-gray-50/50 dark:bg-slate-900/40 rounded-[2rem] p-6 border border-gray-200 dark:border-slate-800/60 shadow-inner" : ""}`}>
               {activeWorkspace === "video" && (
                 /* Grid Layout for Videos */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

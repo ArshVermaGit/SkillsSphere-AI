@@ -322,6 +322,7 @@ Generated cover letters linked to resume and job description.
 | ------------------ | ------------------ | ----------------------------------------------------------- |
 | -------            | ------             | -------------                                               |
 | `/resume-analyzer` | ResumeAnalyzerPage | Main analysis page with upload, JD input, results dashboard |
+| `/resume-history` | ResumeAnalyzerHistoryPage | Unified history hub with tabbed interface for both Resume Analyses and Cover Letters, including full API pagination |
 
 ## Key Components
 
@@ -335,6 +336,7 @@ Generated cover letters linked to resume and job description.
 | `SkillGapVenn`        | SVG Venn diagram showing matched vs missing skills                          |
 | `AnalysisReportPDF`   | Print-friendly layout for PDF export (html2canvas + jsPDF)                  |
 | `ResumeSkeleton`      | Loading placeholder during analysis                                         |
+| `ResumeAnalyzerHistoryPage` | Unified hub for paginated past analyses and generated cover letters |
 
 ## Version Management
 

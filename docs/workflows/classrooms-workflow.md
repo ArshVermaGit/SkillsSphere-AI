@@ -156,16 +156,16 @@ const toggleScreenShare = async () => {
 The classroom features a dynamic layout system allowing users to switch between three primary workspaces. The active workspace is purely a local UI state (`activeWorkspace`), meaning a Tutor can be looking at the code editor while a Student is looking at the Whiteboard.
 
 ### Workspace 1: Video Grid
-The default view. Uses CSS Grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`) to evenly distribute `VideoTile` components.
+The default view. Uses CSS Grid (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`) to perfectly balance the VideoTile components, synchronized with semantic tooltips to optimize layout spacing.
 
 ### Workspace 2: Collaborative Whiteboard
-Rendered via `Whiteboard.jsx`. It utilizes an HTML5 `<canvas>`.
+Rendered via `Whiteboard.jsx`. It utilizes an HTML5 `<canvas>`. Redundant container paddings were removed to maximize whiteboard space.
 - **Syncing**: Captures `onMouseDown`, `onMouseMove`, and `onMouseUp` events.
 - **Broadcasting**: Emits raw coordinate data `[x, y]` and color/brush size over Socket.io.
 - **Rendering**: Remote peers listen for `draw-line` events and programmatically draw on their local canvas.
 
 ### Workspace 3: Shared Code Editor
-Rendered via `SharedCodeEditor.jsx`. Typically utilizes a library like Monaco Editor or CodeMirror.
+Rendered via `SharedCodeEditor.jsx`. Typically utilizes a library like Monaco Editor or CodeMirror. Height constraints have been fixed to fill the workspace perfectly.
 - **Syncing**: Captures `onChange` events.
 - **Broadcasting**: Emits the entire document string or operational transforms (OT) over Socket.io.
 - **Rendering**: Updates the local editor state.
@@ -194,6 +194,12 @@ When a user clicks "Leave" or closes the tab:
      setPeers(prev => prev.filter(p => p.peerId !== socketId));
    });
    ```
+
+### Host End Controls & Production Teardown Safeguards
+Tutors (Hosts) now have exclusive end controls to terminate the entire session for all participants simultaneously. Additional production-level safeguards have been implemented to ensure WebRTC connections and Socket instances are securely torn down without zombie connections remaining.
+
+### Auxiliary Room Controls
+Classrooms now feature native Picture-in-Picture (PiP) support to keep media visible while navigating to other workspaces, alongside one-click room code copy and direct 'Back to Dashboard' navigation for a premium, unified experience.
 
 ---
 

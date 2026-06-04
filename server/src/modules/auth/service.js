@@ -113,15 +113,24 @@ export const verifyUserEmail = async (email, otp) => {
   const isMatch = await bcrypt.compare(otp, user.verificationToken);
   const isExpired = user.verificationTokenExpires < Date.now();
 
-  if (!isMatch || isExpired) {
+  if (isExpired) {
+    // Clear the expired token so it does not accumulate in the database.
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+    user.otpAttempts = 0;
+    await user.save();
+    throw new AppError("OTP expired. Please request a new one.", 400);
+  }
+
+  if (!isMatch) {
     user.otpAttempts += 1;
     await user.save();
-    throw new AppError(isExpired ? "OTP expired" : "Invalid OTP", 400);
+    throw new AppError("Invalid OTP", 400);
   }
 
   user.isVerified = true;
-  user.verificationToken = undefined;
-  user.verificationTokenExpires = undefined;
+  user.verificationToken = null;
+  user.verificationTokenExpires = null;
   user.otpAttempts = 0;
   await user.save();
 
@@ -169,17 +178,26 @@ export const resetUserPassword = async (email, otp, newPassword) => {
   const isMatch = await bcrypt.compare(otp, user.resetPasswordToken);
   const isExpired = user.resetPasswordExpires < Date.now();
 
-  if (!isMatch || isExpired) {
+  if (isExpired) {
+    // Clear the expired token so it does not accumulate in the database.
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    user.otpAttempts = 0;
+    await user.save();
+    throw new AppError("Code expired. Please request a new password reset.", 400);
+  }
+
+  if (!isMatch) {
     user.otpAttempts += 1;
     await user.save();
-    throw new AppError(isExpired ? "Code expired" : "Invalid code", 400);
+    throw new AppError("Invalid code", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
   user.password = hashedPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
+  user.resetPasswordToken = null;
+  user.resetPasswordExpires = null;
   user.otpAttempts = 0;
   await user.save();
 

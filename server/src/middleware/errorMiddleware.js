@@ -134,13 +134,16 @@ const globalErrorHandler = (err, req, res, next) => {
   if (error.name === "ValidationError") error = handleValidationErrorDB(error);
   
   // Handle AI errors (Axios/OpenAI-like + Gemini/Google Generative AI)
+  // IMPORTANT: Do NOT classify AI errors solely by message text (e.g. "google"),
+  // otherwise non-AI operational errors containing these words get misclassified.
   if (
     error.isAxiosError ||
     error.type === "invalid_request_error" ||
     error?.name === "GoogleGenerativeAI" ||
     error?.provider === "google" ||
-    (typeof error?.status === 'number') ||
-    /gemini|generative ai|google/i.test(String(error?.message || ""))
+    (typeof error?.status === "number" &&
+      // Gate status-based heuristics behind known AI/provider identifiers.
+      (error?.name === "GoogleGenerativeAI" || error?.provider === "google"))
   ) {
     error = handleAIError(error);
   }

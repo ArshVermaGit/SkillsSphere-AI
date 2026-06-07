@@ -41,7 +41,8 @@ describe("Classroom Service - Active Sessions", () => {
 
       // Define mocked chain functions
       const mockLean = mock.fn(async () => mockActiveSessions);
-      const mockSort = mock.fn(() => ({ lean: mockLean }));
+      const mockLimit = mock.fn(() => ({ lean: mockLean }));
+      const mockSort = mock.fn(() => ({ limit: mockLimit }));
       const mockPopulate = mock.fn(() => ({ sort: mockSort }));
       
       mock.method(ClassroomSession, "find", () => ({

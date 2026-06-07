@@ -195,8 +195,8 @@ const globalErrorHandler = (err, req, res, next) => {
     // Google / Gemini endpoints (best-effort allowlist)
     "generativelanguage.googleapis.com",
     "googleapis.com",
-    "/v1beta/",
-    "/v1/",
+    "/v1beta/models",
+    "/v1/models",
     // Some SDKs/clients may use a custom base URL that still includes these hints.
     "gemini",
     "generative",

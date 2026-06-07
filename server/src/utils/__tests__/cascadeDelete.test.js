@@ -13,6 +13,7 @@ import InterviewSession from "../../database/models/InterviewSession.js";
 import AnalysisHistory from "../../database/models/AnalysisHistory.js";
 import ClassroomSession from "../../database/models/ClassroomSession.js";
 import JobPosting from "../../database/models/JobPosting.js";
+import RoadmapComment from "../../database/models/RoadmapComment.js";
 import { cascadeDeleteUser } from "../cascadeDelete.js";
 
 test("cascadeDeleteUser sweeps all physical files and databases", async () => {
@@ -73,6 +74,7 @@ test("cascadeDeleteUser sweeps all physical files and databases", async () => {
 
   mock.method(JobPosting, "find", () => ({ session: async () => [mockJobPosting] }));
   mock.method(JobPosting, "deleteMany", async () => ({ deletedCount: 1 }));
+  mock.method(RoadmapComment, "deleteMany", async () => ({ deletedCount: 1 }));
 
   // Mock File System operations
   const unlinkedFiles = [];

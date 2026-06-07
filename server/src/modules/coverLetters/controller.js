@@ -22,10 +22,12 @@ export const getCoverLetters = asyncHandler(async (req, res, next) => {
       .lean(),
     CoverLetter.countDocuments({ user: userId })
   ]);
-
   res.status(200).json({
     success: true,
     count: coverLetters.length,
+    totalCount: total,
+    totalPages: Math.ceil(total / limit),
+    currentPage: page,
     data: coverLetters,
     pagination: {
       page,

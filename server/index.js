@@ -190,33 +190,40 @@ app.get("/health", (req, res) => {
 
 // app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// Backward compatible chat handler:
+// - New format: { "messages": [{ sender: "user"|"bot", text: "..." }] }
+// - Old format: { "message": "..." }
+//
+// We normalize the request into the `messages` shape expected by
+// server/src/modules/ai-assistant/controller.js and let the AI controller handle generation.
 app.post("/api/chat", protect, async (req, res, next) => {
   try {
-    const { message } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: "Message required" });
+    const body = req.body || {};
+
+    if (body.messages && Array.isArray(body.messages)) {
+      // Let downstream controller validate required contents.
+      return aiAssistantRoutes.handle(req, res, next);
     }
 
-    if (!geminiModel) {
-      return res.status(503).json({
-        error:
-          "AI service is currently unconfigured. Please set GEMINI_API_KEY in .env",
-      });
+    if (typeof body.message === "string" && body.message.trim()) {
+      req.body = {
+        messages: [
+          {
+            sender: "user",
+            text: body.message.trim(),
+          },
+        ],
+      };
+      return aiAssistantRoutes.handle(req, res, next);
     }
 
-    const prompt = `You are the "SkillsSphere Career Assistant", an expert AI specializing in tech careers, resumes, recruitment, and technical interviews. 
-Keep your answers concise, helpful, and professional. If the user asks something completely unrelated to careers or the platform, politely decline to answer.
-User message: ${message}`;
-
-    const result = await geminiModel.generateContent(prompt);
-    const reply = result.response.text();
-
-    res.json({ reply });
-  } catch (error) {
-    logger.error("Chat API error:", error);
-    next(error);
+    return res.status(400).json({ error: "Message required" });
+  } catch (err) {
+    logger.error("Chat API error:", err);
+    next(err);
   }
 });
+
 
 
 app.use("/api/auth", requireDB, authRoutes);

@@ -381,7 +381,7 @@ const TalentFinderPage = () => {
               <select
                 value={specialization}
                 onChange={(e) => { setSpecialization(e.target.value); setPage(1); }}
-                className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-700 dark:text-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer"
+                className="w-full bg-gray-50 dark:bg-slate-950/60 border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm font-semibold text-gray-800 dark:text-slate-200 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer shadow-inner"
               >
                 <option value="" className="bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">All Fields</option>
                 <option value="frontend" className="bg-white dark:bg-slate-900 text-gray-900 dark:text-slate-100">Frontend Engineer</option>
@@ -425,7 +425,7 @@ const TalentFinderPage = () => {
                   placeholder="e.g. React, Node, AWS"
                   value={skillsFilter}
                   onChange={(e) => { setSkillsFilter(e.target.value); setPage(1); }}
-                  className="w-full bg-gray-50 dark:bg-slate-950/60 border border-gray-300 dark:border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm text-gray-800 dark:text-slate-200 focus:border-blue-500/50 outline-none transition-all shadow-inner"
+                  className="w-full bg-gray-50 dark:bg-slate-950/60 border border-gray-200 dark:border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm text-gray-800 dark:text-slate-200 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-inner"
                 />
               </div>
               <p className="text-[10px] text-gray-400 dark:text-slate-500 italic px-1">Updates automatically as you type.</p>
@@ -444,7 +444,7 @@ const TalentFinderPage = () => {
                   maxLength={4}
                   value={graduationYear}
                   onChange={(e) => { setGraduationYear(e.target.value.replace(/\D/g, '')); setPage(1); }}
-                  className="w-full bg-gray-50 dark:bg-slate-950/60 border border-gray-300 dark:border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm text-gray-800 dark:text-slate-200 focus:border-blue-500/50 outline-none transition-all shadow-inner"
+                  className="w-full bg-gray-50 dark:bg-slate-950/60 border border-gray-200 dark:border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-sm text-gray-800 dark:text-slate-200 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-inner"
                 />
               </div>
             </div>
@@ -462,7 +462,7 @@ const TalentFinderPage = () => {
                   placeholder="Search candidates by name, email, or keywords..."
                   value={searchQuery}
                   onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-300 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm font-semibold text-gray-800 dark:text-slate-200 focus:border-blue-500/50 outline-none transition-all"
+                  className="w-full bg-gray-50 dark:bg-slate-950 border border-gray-200 dark:border-white/10 rounded-xl pl-12 pr-4 py-3 text-sm font-semibold text-gray-800 dark:text-slate-200 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all shadow-inner"
                 />
               </div>
               <div className="hidden sm:flex items-center px-4 bg-gray-100 dark:bg-slate-950 border border-gray-200 dark:border-white/10 text-xs font-bold text-gray-500 dark:text-slate-400 rounded-xl select-none">

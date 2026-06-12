@@ -188,14 +188,15 @@ export const KANBAN_COLUMNS = {
 
 | HTTP Method | API Endpoint | Responsibility | Security Level | Payload | Response Signature |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/recruiter/jobs` | Retrieves the global job grid. | `Recruiter JWT` | `None` | `[{ _id, title, status, metrics }]` |
-| `POST` | `/api/recruiter/jobs` | Drafts a new requisition. | `Recruiter JWT` | `{ title, description, skills }` | `{ success: true, jobId }` |
-| `PATCH` | `/api/recruiter/jobs/:id` | Modifies job properties. | `Recruiter + Owner` | `{ status: 'closed' }` | `{ success: true }` |
-| `GET` | `/api/recruiter/jobs/:id/applicants`| Streams applicant payloads. | `Recruiter + Owner` | `None` | `[{ application, candidatePreview }]` |
-| `PATCH` | `/api/recruiter/applications/:id/status`| Executes column transition logic. | `Recruiter + Owner` | `{ status, note }` | `{ success: true, timeline: [...] }` |
-| `GET` | `/api/recruiter/analytics` | Aggregates massive AI/ATS scores. | `Recruiter JWT` | `None` | `{ matchCategoryDistribution, totalApplicants }` |
+| `GET` | `/api/recruiter/jobs` | Recruiter | Lists all jobs created by the authenticated recruiter. | `None` | `[{ _id, title, status, metrics }]` |
+| `POST` | `/api/recruiter/jobs` | Recruiter | Creates a new job requisition. | `{ title, company, description, skills, salary }` | `{ success: true, jobId }` |
+| `PATCH` | `/api/recruiter/jobs/:id` | Recruiter | Updates an existing job (e.g., closing a filled role). | `{ status: 'closed' }` | `{ success: true }` |
+| `GET` | `/api/recruiter/jobs/:jobId/applicants` | Recruiter | Fetches all applications for the Kanban board. | `None` | `[{ application, candidatePreview }]` |
+| `PATCH` | `/api/recruiter/applications/:id/status` | Recruiter | Moves a candidate between Kanban columns. | `{ status: "interviewing", note: "Optional feedback" }` | `{ success: true, timeline: [...] }` |
+| `GET` | `/api/recruiter/analytics` | Recruiter | Aggregates AI/ATS match scores across all jobs. | `None` | `{ matchCategoryDistribution, totalApplicants }` |
 
 ### Websocket Notification Layer (Optional Extension)
+
 While the REST layer handles state mutation, the application is pre-architected to integrate with `Socket.io` for real-time collaboration.
 If Recruiter A is dragging candidates, Recruiter B receives a `CANDIDATE_MOVED` socket payload, invoking a passive Redux re-sync without a hard page reload.
 
@@ -294,7 +295,7 @@ The creation form integrates `react-hook-form` coupled tightly with `zod` schema
 
 ### `RecruiterAnalyticsPage.jsx`
 Responsible for deep AI/ATS visual analytics, separated into highly modular segmentation tabs.
-- **AI & ATS Intelligence Stability**: This component utilizes highly strict boundary checks. The backend delivers aggregated `lowAtsCount` and complex `matchCategoryDistribution` matrices. These are mapped dynamically to `CircularProgressRing` SVG gauges and `recharts` Pie distributions. 
+- **AI & ATS Intelligence Stability**: This component utilizes highly strict boundary checks. The backend delivers aggregated `lowAtsCount` and complex `matchCategoryDistribution` matrices. These are mapped dynamically to `CircularProgressRing` SVG gauges and `recharts` Pie distributions.
 - **Error Boundary Prevention**: The UI is explicitly engineered to avoid component crashes by rigorously asserting the availability of all external library dependencies (like `lucide-react` icons) and handling empty data payloads gracefully via `applicantsPerJob.length > 0` checks, rendering animated pulse skeletons instead of throwing exceptions.
 - **PDF/CSV Export Tooling**: Implements a highly optimized HTML-to-PDF canvas rasterizer and CSV stringifier natively in the browser, completely offloading export compute resources from the Node.js backend.
 

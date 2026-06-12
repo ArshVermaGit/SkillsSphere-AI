@@ -118,14 +118,14 @@ export function initClassroomSockets(io) {
           if (activeSockets.length === 0) {
             // If the room has no active socket connections, check/set emptySince
             if (!freshSession.emptySince) {
-              logger.log(`Background Sweeper: Room ${freshSession.roomId} is empty. Starting 30-second teardown countdown...`);
+              logger.info(`Background Sweeper: Room ${freshSession.roomId} is empty. Starting 30-second teardown countdown...`);
               freshSession.emptySince = new Date();
               await freshSession.save();
             } else {
               const gracePeriodMs = 30000; // 30 seconds
               const cutoffTime = new Date(Date.now() - gracePeriodMs);
               if (freshSession.emptySince < cutoffTime) {
-                logger.log(`Background Sweeper: Ending empty classroom session ${freshSession.roomId}`);
+                logger.info(`Background Sweeper: Ending empty classroom session ${freshSession.roomId}`);
                 freshSession.status = "ended";
                 freshSession.endedAt = new Date();
                 await freshSession.save();
@@ -168,7 +168,7 @@ export function initClassroomSockets(io) {
   }, 10000); // Check every 10 seconds
 
   io.on("connection", (socket) => {
-    logger.log(`Socket connected: ${socket.id}`);
+    logger.info(`Socket connected: ${socket.id}`);
 
     // Join a specific room
     socket.on("join-room", async ({ roomId }) => {
@@ -215,7 +215,7 @@ export function initClassroomSockets(io) {
         // Ensure state is loaded from Redis/DB into memory
         await loadRoomState(roomId, session);
 
-        logger.log(
+        logger.info(
           `User ${socket.data.user.name} (${socket.id}) joining room ${roomId}`,
         );
 
@@ -301,7 +301,7 @@ export function initClassroomSockets(io) {
 
     // Disconnect
     socket.on("disconnecting", async () => {
-      logger.log(`Socket disconnecting: ${socket.id}`);
+      logger.info(`Socket disconnecting: ${socket.id}`);
       // Find all rooms this socket joined (excluding its own private room)
       const joinedRooms = Array.from(socket.rooms).filter((r) => r !== socket.id);
 
@@ -339,7 +339,7 @@ export function initClassroomSockets(io) {
 
             // Automatically teardown/end the classroom session in database if empty
             if (session.participants.length === 0) {
-              logger.log(`Classroom ${roomId} empty. Initiating 30-second teardown countdown...`);
+              logger.info(`Classroom ${roomId} empty. Initiating 30-second teardown countdown...`);
               session.emptySince = new Date();
             }
 

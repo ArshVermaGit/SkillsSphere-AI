@@ -201,12 +201,15 @@ export const onboardUser = asyncHandler(async (req, res, next) => {
     return next(new AppError("Please select a valid role", 400));
   }
 
+  const accessLevel = (role === "recruiter" || role === "tutor") ? "pending" : "full";
+
   const updatedUser = await User.findByIdAndUpdate(
     req.user._id,
     { 
       name: name.trim(),
       role: role,
-      isOnboarded: true 
+      isOnboarded: true,
+      accessLevel,
     },
     { new: true, runValidators: true }
   ).select("-password -__v");
@@ -228,13 +231,30 @@ export const onboardUser = asyncHandler(async (req, res, next) => {
  * @access  Private
  */
 export const updateProfile = asyncHandler(async (req, res, next) => {
-  const { name, company, companyWebsite } = req.body;
+  const { name, company, companyWebsite, linkedinUrl, credentialUrl } = req.body;
+
 
   if (!name || name.trim().length < 2) {
     return next(new AppError("Please provide a valid name (at least 2 characters)", 400));
   }
 
   const updateData = { name: name.trim() };
+
+  // Handle linkedinUrl and credentialUrl for recruiter and tutor roles
+  if (req.user.role === "recruiter" || req.user.role === "tutor") {
+    if (linkedinUrl !== undefined) {
+      updateData.linkedinUrl =
+        typeof linkedinUrl === "string" && linkedinUrl.trim()
+          ? linkedinUrl.trim()
+          : null;
+    }
+    if (credentialUrl !== undefined) {
+      updateData.credentialUrl =
+        typeof credentialUrl === "string" && credentialUrl.trim()
+          ? credentialUrl.trim()
+          : null;
+    }
+  }
 
   if (req.user.role === "recruiter") {
     if (company !== undefined) {
@@ -249,14 +269,45 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
     }
   }
 
-  const updatedUser = await User.findByIdAndUpdate(
-    req.user._id,
-    updateData,
-    { new: true, runValidators: true }
-  ).select("-password -__v");
+const updatedUser = await User.findByIdAndUpdate(
+  req.user._id,
+  { $set: updateData },
+  { new: true, runValidators: true }
+).select("-password -__v");
 
   if (!updatedUser) {
     return next(new AppError("User not found", 404));
+  }
+
+  // Recalculate verification status for recruiter and tutor roles
+  if (updatedUser.role === "recruiter" || updatedUser.role === "tutor") {
+    let shouldBeVerified = false;
+
+    if (updatedUser.role === "recruiter") {
+      // recruiter: linkedinUrl non-empty AND (company OR credentialUrl) non-empty
+      shouldBeVerified = !!updatedUser.linkedinUrl &&
+        (!!updatedUser.company || !!updatedUser.credentialUrl);
+    } else if (updatedUser.role === "tutor") {
+      // tutor: linkedinUrl non-empty AND credentialUrl non-empty
+      shouldBeVerified = !!updatedUser.linkedinUrl && !!updatedUser.credentialUrl;
+    }
+
+    const targetAccessLevel = shouldBeVerified ? "full" : "pending";
+
+    // Update accessLevel if it changed
+    if (updatedUser.accessLevel !== targetAccessLevel) {
+      const finalUser = await User.findByIdAndUpdate(
+        req.user._id,
+        { accessLevel: targetAccessLevel },
+        { new: true, runValidators: true }
+      ).select("-password -__v");
+
+      return res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        user: finalUser,
+      });
+    }
   }
 
   res.status(200).json({

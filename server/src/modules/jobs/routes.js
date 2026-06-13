@@ -1,5 +1,5 @@
 import express from "express";
-import { protect, authorizeRoles } from "../../middleware/authMiddleware.js";
+import { protect, authorizeRoles, requireFullAccess } from "../../middleware/authMiddleware.js";
 import { validateBody } from "../../middleware/validation.js";
 import {
   jobPostingSchema,
@@ -105,7 +105,7 @@ router.get("/recruiter/analytics", authorizeRoles("recruiter"), getRecruiterAnal
  *       201:
  *         description: Job created
  */
-router.post("/", authorizeRoles("recruiter"), jobCreationLimiter, validateBody(jobPostingSchema), createJobPosting);
+router.post("/", authorizeRoles("recruiter"), requireFullAccess, jobCreationLimiter, validateBody(jobPostingSchema), createJobPosting);
 
 // Student application routes (must be before /:id to avoid route conflict)
 router.get("/my-applications", authorizeRoles("student"), getMyApplications);

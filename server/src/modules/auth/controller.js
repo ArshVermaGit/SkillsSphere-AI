@@ -286,7 +286,8 @@ export const verifyAndDecodeOAuthState = (stateStr) => {
 export const initiateGoogleOAuth = (req, res) => {
   const frontendOrigin = new URL(getFrontendUrl()).origin;
   const requestedRedirect = req.query.redirect;
-  const role = req.query.role;
+  const rawRole = typeof req.query.role === "string" ? req.query.role.trim().toLowerCase() : "";
+  const role = VALID_OAUTH_ROLES.has(rawRole) ? rawRole : "student";
   const redirectPath =
     typeof requestedRedirect === "string" && requestedRedirect.length > 0
       ? normalizeOAuthRedirectPath(requestedRedirect)

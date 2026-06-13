@@ -3,12 +3,24 @@ import { z } from 'zod';
 export const jobPostingSchema = z.object({
   title: z.string().min(3, 'Job title must be at least 3 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters'),
-  company: z.string().min(2, 'Company name is required'),
-  location: z.string().min(2, 'Location is required'),
-  salary: z.string().optional(),
-  type: z.enum(['full-time', 'part-time', 'contract', 'internship', 'freelance']).optional(),
+  location: z.object({
+    city: z.string().min(1, 'City is required'),
+    state: z.string().min(1, 'State is required'),
+    country: z.string().optional(),
+    remote: z.boolean().optional(),
+  }),
+  salary: z.object({
+    min: z.number().min(0, 'Minimum salary cannot be negative'),
+    max: z.number().min(0, 'Maximum salary cannot be negative'),
+    currency: z.string().optional(),
+    isNegotiable: z.boolean().optional(),
+  }),
+  skills: z.array(z.string()).min(1, 'At least one skill is required'),
+  experienceRequired: z.number().optional(),
+  jobLevel: z.string().optional(),
   requirements: z.array(z.string()).optional(),
   responsibilities: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
   status: z.enum(['open', 'closed', 'draft']).optional(),
 });
 

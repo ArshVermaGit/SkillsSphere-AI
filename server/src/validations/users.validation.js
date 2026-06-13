@@ -5,6 +5,8 @@ export const updateProfileSchema = z.object({
   role: z.string().optional(),
   company: z.string().optional(),
   companyWebsite: z.string().url('Invalid URL').optional(),
+  linkedinUrl: z.string().optional(),
+  credentialUrl: z.string().optional(),
   bio: z.string().optional(),
   skills: z.array(z.string()).optional(),
   experience: z.array(z.any()).optional(),

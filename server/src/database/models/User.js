@@ -82,6 +82,22 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    accessLevel: {
+      type: String,
+      enum: ["full", "pending"],
+      default: "full",
+    },
+
+    linkedinUrl: {
+      type: String,
+      default: null,
+    },
+
+    credentialUrl: {
+      type: String,
+      default: null,
+    },
+
     preferences: {
       notifications: {
         emailNotifications: { type: Boolean, default: true },

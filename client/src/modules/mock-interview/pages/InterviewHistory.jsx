@@ -11,10 +11,11 @@ import {
   Download,
   FileJson,
   ArrowLeft,
-  Trash2,
   History,
   Brain,
   Sparkles,
+  Search,
+  RotateCcw,
 } from "lucide-react";
 import Navbar from "../../../shared/components/Navbar";
 import Footer from "../../../shared/components/Footer";
@@ -24,6 +25,14 @@ import logger from "../../../utils/logger";
 
 const EXPORT_CSV_FILENAME = "interview-history.csv";
 const EXPORT_JSON_FILENAME = "interview-history.json";
+
+const DEFAULT_FILTERS = {
+  search: "",
+  difficulty: "",
+  status: "",
+  minScore: "",
+  maxScore: "",
+};
 
 const toDisplayValue = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean).join("; ");
@@ -42,6 +51,50 @@ const getNestedScore = (session, key) =>
     session?.scoreBreakdown?.[key],
   );
 
+const getSessionTitle = (session) =>
+  firstAvailable(session?.title, session?.topic, session?.type, "Mock Interview");
+
+const getSessionScore = (session) => {
+  const score = Number(firstAvailable(session?.overallScore, session?.score, session?.scores?.overall, 0));
+  return Number.isFinite(score) ? score : 0;
+};
+
+const getSessionStatus = (session) =>
+  String(
+    firstAvailable(
+      session?.status,
+      session?.interviewStatus,
+      session?.state,
+      session?.completedAt || session?.finishedAt ? "completed" : "unknown",
+    ),
+  )
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-");
+
+export const filterInterviewSessions = (interviews, filters = DEFAULT_FILTERS) => {
+  const searchTerm = filters.search.trim().toLowerCase();
+  const minScore = filters.minScore === "" ? null : Number(filters.minScore);
+  const maxScore = filters.maxScore === "" ? null : Number(filters.maxScore);
+  const difficulty = filters.difficulty.toLowerCase();
+  const status = filters.status.toLowerCase();
+
+  return interviews.filter((session) => {
+    const title = String(getSessionTitle(session)).toLowerCase();
+    const topic = String(session?.topic || "").toLowerCase();
+    const sessionDifficulty = String(session?.difficulty || "").toLowerCase();
+    const sessionStatus = getSessionStatus(session);
+    const score = getSessionScore(session);
+
+    const matchesSearch = !searchTerm || title.includes(searchTerm) || topic.includes(searchTerm);
+    const matchesDifficulty = !difficulty || sessionDifficulty === difficulty;
+    const matchesStatus = !status || sessionStatus === status;
+    const matchesMinScore = minScore === null || score >= minScore;
+    const matchesMaxScore = maxScore === null || score <= maxScore;
+
+    return matchesSearch && matchesDifficulty && matchesStatus && matchesMinScore && matchesMaxScore;
+  });
+};
+
 const normalizeInterviewForExport = (session) => {
   const technicalScore = getNestedScore(session, "technical");
   const communicationScore = getNestedScore(session, "communication");
@@ -57,7 +110,7 @@ const normalizeInterviewForExport = (session) => {
 
   return {
     id: session?._id || session?.id || "",
-    title: firstAvailable(session?.title, session?.topic, session?.type, "Mock Interview"),
+    title: getSessionTitle(session),
     type: firstAvailable(session?.type, session?.interviewType, session?.category, session?.topic),
     dateCompleted: firstAvailable(session?.completedAt, session?.finishedAt, session?.updatedAt, session?.createdAt),
     overallScore: firstAvailable(session?.overallScore, session?.score, session?.scores?.overall),
@@ -165,6 +218,7 @@ const InterviewHistory = () => {
   const [error, setError] = useState(null);
   const [exportingType, setExportingType] = useState(null);
   const [exportError, setExportError] = useState(null);
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const exportInProgressRef = useRef(false);
 
   const fetchHistory = async (page = 1) => {
@@ -226,6 +280,17 @@ const InterviewHistory = () => {
       exportInProgressRef.current = false;
       setExportingType(null);
     }
+  };
+
+  const filteredSessions = filterInterviewSessions(sessions, filters);
+  const filtersActive = Object.values(filters).some((value) => value !== "");
+
+  const updateFilter = (key, value) => {
+    setFilters((currentFilters) => ({ ...currentFilters, [key]: value }));
+  };
+
+  const resetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
   };
 
   if (loading) {
@@ -344,8 +409,108 @@ const InterviewHistory = () => {
         </div>
       ) : (
         <>
+        <section className="bg-white dark:bg-surface border border-border rounded-2xl p-4 sm:p-5 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+            <label className="lg:col-span-2 flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-text-muted">
+              Search
+              <div className="relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  type="search"
+                  value={filters.search}
+                  onChange={(event) => updateFilter("search", event.target.value)}
+                  placeholder="Search topic or title"
+                  className="w-full rounded-xl border border-border bg-gray-50 dark:bg-white/5 py-2.5 pl-9 pr-3 text-sm font-medium text-text-main outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10"
+                />
+              </div>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-text-muted">
+              Difficulty
+              <select
+                value={filters.difficulty}
+                onChange={(event) => updateFilter("difficulty", event.target.value)}
+                className="w-full rounded-xl border border-border bg-gray-50 dark:bg-white/5 py-2.5 px-3 text-sm font-medium text-text-main outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10"
+              >
+                <option value="">All difficulties</option>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-text-muted">
+              Status
+              <select
+                value={filters.status}
+                onChange={(event) => updateFilter("status", event.target.value)}
+                className="w-full rounded-xl border border-border bg-gray-50 dark:bg-white/5 py-2.5 px-3 text-sm font-medium text-text-main outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10"
+              >
+                <option value="">All statuses</option>
+                <option value="completed">Completed</option>
+                <option value="in-progress">In progress</option>
+                <option value="failed">Failed</option>
+              </select>
+            </label>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-text-muted">
+                Min Score
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={filters.minScore}
+                  onChange={(event) => updateFilter("minScore", event.target.value)}
+                  className="w-full rounded-xl border border-border bg-gray-50 dark:bg-white/5 py-2.5 px-3 text-sm font-medium text-text-main outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-xs font-bold uppercase tracking-wide text-text-muted">
+                Max Score
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={filters.maxScore}
+                  onChange={(event) => updateFilter("maxScore", event.target.value)}
+                  className="w-full rounded-xl border border-border bg-gray-50 dark:bg-white/5 py-2.5 px-3 text-sm font-medium text-text-main outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-text-muted">
+              Showing {filteredSessions.length} of {sessions.length} interviews
+            </p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              disabled={!filtersActive}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-gray-50 dark:bg-white/5 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 transition-colors hover:border-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RotateCcw size={15} />
+              Reset filters
+            </button>
+          </div>
+        </section>
+
+        {filteredSessions.length === 0 ? (
+          <div className="text-center py-16 px-8 text-text-muted flex flex-col items-center bg-white dark:bg-surface border border-border rounded-2xl shadow-sm">
+            <Search size={44} className="mb-4 text-indigo-400" />
+            <p className="mt-2 text-lg font-medium text-text-main">No matching interviews found.</p>
+            <p className="mb-6">Try adjusting your search or filters.</p>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-none py-3 px-6 rounded-xl font-semibold cursor-pointer hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] hover:-translate-y-0.5 transition-all"
+            >
+              <RotateCcw size={18} /> Reset filters
+            </button>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {sessions.map((session) => (
+          {filteredSessions.map((session) => (
             <div
               key={session._id}
               className="bg-white dark:bg-surface border border-border shadow-[0_10px_20px_rgba(0,0,0,0.02)] dark:shadow-none rounded-2xl py-6 px-8 flex items-center justify-between cursor-pointer transition-all gap-4 flex-wrap hover:border-indigo-500/50 hover:shadow-[0_15px_30px_rgba(99,102,241,0.1)] hover:-translate-y-1"
@@ -354,7 +519,7 @@ const InterviewHistory = () => {
               }
             >
               <div className="flex flex-col gap-1.5 flex-1">
-                <span className="font-bold text-xl text-text-main capitalize">{session.topic}</span>
+                <span className="font-bold text-xl text-text-main capitalize">{getSessionTitle(session)}</span>
                 <div className="flex flex-wrap gap-2.5 text-xs text-text-muted mt-2 font-medium">
                   <span className="bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">{formatDate(session.createdAt)}</span>
                   <span className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-md capitalize">
@@ -366,6 +531,9 @@ const InterviewHistory = () => {
                       {session.duration}s
                     </span>
                   )}
+                  <span className="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md capitalize">
+                    {getSessionStatus(session).replace("-", " ")}
+                  </span>
                   <span className="bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-md">{session.totalQuestions} questions</span>
                 </div>
               </div>
@@ -378,8 +546,9 @@ const InterviewHistory = () => {
             </div>
           ))}
         </div>
+        )}
 
-          {pagination.pages > 1 && (
+          {pagination.pages > 1 && !filtersActive && (
             <Pagination
               currentPage={pagination.page}
               totalPages={pagination.pages}

@@ -47,7 +47,7 @@ const generateOTP = () => {
 };
 
 // 📝 Register user
-export const registerUserAndIssueToken = async ({ name, email, password, role }) => {
+export const registerUserAndIssueToken = async ({ name, email, password, role, company }) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -67,6 +67,7 @@ export const registerUserAndIssueToken = async ({ name, email, password, role })
     email,
     password: hashedPassword,
     role,
+    company,
     verificationToken: skipVerification ? undefined : hashedOtp,
     verificationTokenExpires: skipVerification ? undefined : otpExpiry,
     isVerified: skipVerification,
@@ -77,6 +78,8 @@ export const registerUserAndIssueToken = async ({ name, email, password, role })
     try {
       await sendOTP(email, otp, "verification");
     } catch (error) {
+      // Clean up the created user so they aren't left in a stranded unverified state
+      await User.findByIdAndDelete(user._id);
       throw new AppError("Failed to send verification email. Please try again.", 500);
     }
   } else {

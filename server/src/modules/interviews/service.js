@@ -1,4 +1,5 @@
 import InterviewSession from "../../database/models/InterviewSession.js";
+import fsPromises from "fs/promises";
 import QuestionBank from "../../database/models/QuestionBank.js";
 import ConceptGraph from "../../database/models/ConceptGraph.js";
 import LearningProgress from "../../database/models/LearningProgress.js";
@@ -214,6 +215,10 @@ export const processAnswerSubmission = async ({
     session.answers[currentIndex].answeredAt = new Date();
 
     if (audioFile) {
+      const oldAudioPath = session.answers[currentIndex].audioPath;
+      if (oldAudioPath && oldAudioPath !== audioFile.path) {
+        await fsPromises.unlink(oldAudioPath).catch(() => {});
+      }
       session.answers[currentIndex].audioPath = audioFile.path || null;
     }
 

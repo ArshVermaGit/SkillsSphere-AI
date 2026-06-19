@@ -7,6 +7,7 @@ import {
   resendOtp,
   setPendingVerificationEmail,
   verifyEmail,
+  persistPendingEmail,
 } from "../../features/auth/authSlice";
 import Button from "../../shared/components/Button";
 import Input from "../../shared/components/Input";
@@ -52,6 +53,7 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     if (initialEmail) {
+      persistPendingEmail(initialEmail);
       dispatch(setPendingVerificationEmail(initialEmail));
     }
   }, [dispatch, initialEmail]);

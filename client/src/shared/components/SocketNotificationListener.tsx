@@ -11,6 +11,7 @@ import {
   getUnreadCount,
   setSocketStatus,
 } from "../../features/notifications/notificationsSlice";
+import { clearDashboardCache } from "../../modules/dashboard/services/dashboardService";
 
 /**
  * A global component that listens for socket notifications and triggers toasts.
@@ -116,9 +117,15 @@ const SocketNotificationListener = () => {
       socket.disconnect();
     };
 
+    const handleDashboardRefresh = () => {
+      clearDashboardCache();
+      window.dispatchEvent(new CustomEvent("dashboard:refresh"));
+    };
+
     socket.on("connect", handleConnect);
     socket.on("application-status-updated", handleApplicationStatusUpdated);
     socket.on("new-notification", handleNewNotification);
+    socket.on("dashboard-refresh", handleDashboardRefresh);
     socket.on("disconnect", handleDisconnect);
     socket.on("connect_error", handleConnectError);
 
@@ -126,6 +133,7 @@ const SocketNotificationListener = () => {
       socket.off("connect", handleConnect);
       socket.off("application-status-updated", handleApplicationStatusUpdated);
       socket.off("new-notification", handleNewNotification);
+      socket.off("dashboard-refresh", handleDashboardRefresh);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleConnectError);
       dispatch(setSocketStatus("idle"));

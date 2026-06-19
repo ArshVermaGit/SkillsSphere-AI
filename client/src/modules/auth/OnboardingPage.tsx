@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Check, Camera, Loader2, LogOut } from "lucide-react";
 import { API_URL } from "../../config/env";
 import { useToast } from "../../shared/components";
-import { setOAuthData, logoutUser } from "../../features/auth/authSlice";
+import { setOAuthData, logoutUser, persistAuth } from "../../features/auth/authSlice";
 import Navbar from "../../shared/components/Navbar";
 import Footer from "../../shared/components/Footer";
 import Button from "../../shared/components/Button";
@@ -147,12 +147,9 @@ const OnboardingPage = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Onboarding failed");
 
-      // Update Redux state
-      dispatch(setOAuthData({ 
-        token, 
-        user: { ...data.user, id: data.user._id, isOnboarded: true }, 
-        rememberMe: true 
-      }));
+      const updatedUser = { ...data.user, id: data.user._id, isOnboarded: true };
+      persistAuth({ token, user: updatedUser }, true);
+      dispatch(setOAuthData({ token, user: updatedUser, rememberMe: true }));
       
       if (role === "recruiter" || role === "tutor") {
         success("Please add your LinkedIn profile and a supporting document to unlock full access.");

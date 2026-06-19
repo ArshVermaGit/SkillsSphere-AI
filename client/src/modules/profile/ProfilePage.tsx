@@ -16,7 +16,7 @@ import Input from "../../shared/components/Input";
 import Button from "../../shared/components/Button";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { updateUserProfile, logout } from "../../features/auth/authSlice";
+import { updateUserProfile, logout, persistUser } from "../../features/auth/authSlice";
 import {
   updateProfile,
   deleteProfile,
@@ -291,6 +291,7 @@ const ProfilePage = () => {
     setAvatarError("");
     try {
       const response = await uploadAvatar(file, token);
+      persistUser(response.user);
       dispatch(updateUserProfile(response.user));
       setAvatarSrc(response.user?.profilePic ?? null);
       return true;
@@ -307,6 +308,7 @@ const ProfilePage = () => {
     setAvatarError("");
     try {
       const response = await removeAvatar(token);
+      persistUser(response.user);
       dispatch(updateUserProfile(response.user));
       setAvatarSrc(null);
     } catch (err) {
@@ -373,6 +375,7 @@ const ProfilePage = () => {
         payload.companyWebsite = formData.companyWebsite.trim();
       }
       const response = await updateProfile(payload, token);
+      persistUser(response.user);
       dispatch(updateUserProfile(response.user));
       setSaveSuccess(true);
       setIsEditing(false);

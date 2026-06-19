@@ -4,6 +4,7 @@ import { TrendingUp, Users, AlertCircle, ArrowLeft, Sparkles } from "lucide-reac
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../../services/apiClient.js";
+import { ErrorState } from "../../shared/components";
 import Navbar from "../../shared/components/Navbar";
 import Footer from "../../shared/components/Footer";
 
@@ -26,11 +27,12 @@ const CustomizedContent = (props) => {
         y={y}
         width={width}
         height={height}
+        className="fill-[var(--tw-fill)] stroke-[var(--tw-stroke)] stroke-[width:var(--tw-stroke-width)] stroke-[opacity:var(--tw-stroke-opacity)]"
         style={{
-          fill: depth < 2 ? (colors ? colors[colorIndex] : "#8884d8") : "none",
-          stroke: "#fff",
-          strokeWidth: 2 / (depth + 1e-10),
-          strokeOpacity: 1 / (depth + 1e-10),
+          '--tw-fill': depth < 2 ? (colors ? colors[colorIndex] : "#8884d8") : "none",
+          '--tw-stroke': "#fff",
+          '--tw-stroke-width': 2 / (depth + 1e-10),
+          '--tw-stroke-opacity': 1 / (depth + 1e-10),
         }}
       />
       {depth === 1 && width > 40 && height > 30 ? (
@@ -58,6 +60,8 @@ const TutorAnalyticsDashboard = () => {
 
   useEffect(() => {
     const fetchAnalytics = async () => {
+      setLoading(true);
+      setError("");
       try {
         const result = await apiRequest("/api/analytics/skill-gaps", { token });
         if (result.success) {
@@ -72,6 +76,7 @@ const TutorAnalyticsDashboard = () => {
         setLoading(false);
       }
     };
+
     fetchAnalytics();
   }, [token]);
 
@@ -91,9 +96,24 @@ const TutorAnalyticsDashboard = () => {
     return (
       <main className="min-h-screen bg-[var(--background)] dark:bg-[radial-gradient(circle_at_top_left,#0f172a,#020617)] text-gray-900 dark:text-slate-100 flex flex-col pt-24">
         <Navbar />
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-red-500">
-          <AlertCircle className="mb-2 w-10 h-10" />
-          <p className="text-lg font-medium">{error}</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <div className="w-full max-w-lg bg-white dark:bg-[#121214] p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5">
+            <ErrorState
+              title="Analytics Unavailable"
+              description={error}
+              onRetry={() => {
+                setLoading(true);
+                setError("");
+                apiRequest("/api/analytics/skill-gaps", { token }).then(result => {
+                  if (result.success) setData(result.data);
+                  else setError(result.message || "Failed to load data");
+                }).catch(err => {
+                  logger.error(err);
+                  setError("Network error occurred while fetching analytics");
+                }).finally(() => setLoading(false));
+              }}
+            />
+          </div>
         </div>
         <Footer />
       </main>

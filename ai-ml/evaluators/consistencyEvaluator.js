@@ -15,19 +15,18 @@ function splitSentences(text) {
   return text.split(/[.!?]/).map(s => s.trim()).filter(Boolean);
 }
 
-// Build frequency map of words in the text
-// Build frequency map of words in the text
+// Build frequency map of words in the text and track absolute word count
 function getWordFrequency(text) {
-  // Split using a regex that handles all whitespace variants (spaces, tabs, newlines) seamlessly
   const words = text.split(/\s+/).filter(Boolean);
+  const totalWordCount = words.length; // Capture true total word count before filtering
   const freq = {};
 
   words.forEach(word => {
-    if (word.length < 3) return; // ignore small words
+    if (word.length < 3) return; // ignore small words for frequency evaluation
     freq[word] = (freq[word] || 0) + 1;
   });
 
-  return freq;
+  return { freqMap: freq, totalWordCount };
 }
 
 // Calculate dynamic threshold based on resume length (fixes #230)
@@ -93,12 +92,12 @@ export default function consistencyEvaluator({
   // 2. Normalize individual sentences for clean structural comparison
   const sentences = rawSentences.map(s => normalize(s));
 
-  // 3. Keep global normalization intact for whole-text frequency maps and phrase analysis
-  const clean = normalize(resumeText);
-  const freqMap = getWordFrequency(clean);
+  const sentences = splitSentences(clean);
+
+  // Extract both the frequency map and the non-deflated total word count
+  const { freqMap, totalWordCount: wordCount } = getWordFrequency(clean);
   
-  // Calculate word count and dynamic threshold (fixes #230)
-  const wordCount = Object.values(freqMap).reduce((sum, count) => sum + count, 0);
+  // Calculate dynamic threshold using the true word count (fixes #230)
   const dynamicThreshold = calculateDynamicThreshold(wordCount);
 
   const overusedWords = detectOverusedWords(freqMap, dynamicThreshold);

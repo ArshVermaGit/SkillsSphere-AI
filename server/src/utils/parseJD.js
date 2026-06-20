@@ -40,8 +40,8 @@ export const extractDataFromJD = (jdText) => {
     let match;
     while ((match = pattern.exec(normalizedJD)) !== null) {
       if (match[2]) {
-        // Range case: take the lower bound as required experience
-        maxYears = Math.max(maxYears, parseInt(match[1]));
+        // Range case: take the upper bound as the conservative experience estimate
+        maxYears = Math.max(maxYears, parseInt(match[2]));
       } else {
         maxYears = Math.max(maxYears, parseInt(match[1]));
       }

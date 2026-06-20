@@ -99,7 +99,7 @@ function App() {
           path="/job-matcher"
           element={
             <ProtectedRoute requiredRole="student">
-              <JobMatcherPage />
+              <ErrorBoundary><JobMatcherPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -107,7 +107,7 @@ function App() {
           path="/my-applications"
           element={
             <ProtectedRoute requiredRole="student">
-              <MyApplicationsPage />
+              <ErrorBoundary><MyApplicationsPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -118,7 +118,7 @@ function App() {
           path="/resume-analyzer"
           element={
             <ProtectedRoute requiredRole="student">
-              <ResumeAnalyzerPage />
+              <ErrorBoundary><ResumeAnalyzerPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -126,7 +126,7 @@ function App() {
           path="/resume-history" 
           element={
             <ProtectedRoute requiredRole="student">
-              <ResumeAnalyzerHistoryPage />
+              <ErrorBoundary><ResumeAnalyzerHistoryPage /></ErrorBoundary>
             </ProtectedRoute>
           } 
         />
@@ -135,7 +135,7 @@ function App() {
           element={
             // @ts-expect-error TODO: Fix pervasive types
             <ProtectedRoute>
-              <DashboardPage />
+              <ErrorBoundary><DashboardPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -145,7 +145,7 @@ function App() {
             // @ts-expect-error TODO: Fix pervasive types
             <ProtectedRoute>
               {" "}
-              <NotificationsPage />
+              <ErrorBoundary><NotificationsPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -168,7 +168,7 @@ function App() {
           path="/recruiter/jobs"
           element={
             <ProtectedRoute requiredRole="recruiter">
-              <RecruiterJobsPage />
+              <ErrorBoundary><RecruiterJobsPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -208,7 +208,7 @@ function App() {
           path="/recruiter/talent-finder"
           element={
             <ProtectedRoute requiredRole="recruiter">
-              <TalentFinderPage />
+              <ErrorBoundary><TalentFinderPage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -234,7 +234,7 @@ function App() {
           element={
             // @ts-expect-error TODO: Fix pervasive types
             <ProtectedRoute>
-              <ProfilePage />
+              <ErrorBoundary><ProfilePage /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -265,7 +265,7 @@ function App() {
           element={
             // @ts-expect-error TODO: Fix pervasive types
             <ProtectedRoute>
-              <ClassroomsDashboard />
+              <ErrorBoundary><ClassroomsDashboard /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -274,7 +274,7 @@ function App() {
           element={
             // @ts-expect-error TODO: Fix pervasive types
             <ProtectedRoute>
-              <ClassroomRoom />
+              <ErrorBoundary><ClassroomRoom /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -284,7 +284,7 @@ function App() {
           path="/mock-interview"
           element={
             <ProtectedRoute requiredRole="student">
-              <InterviewLobby />
+              <ErrorBoundary><InterviewLobby /></ErrorBoundary>
             </ProtectedRoute>
           }
         />
@@ -308,7 +308,7 @@ function App() {
           path="/mock-interview/:id"
           element={
             <ProtectedRoute requiredRole="student">
-              <InterviewSession />
+              <ErrorBoundary><InterviewSession /></ErrorBoundary>
             </ProtectedRoute>
           }
         />

@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger.js';
+import { sanitizeValue } from '../utils/logSanitizer.js';
 
 export const requestLogger = (req, res, next) => {
   req.id = uuidv4();
@@ -10,11 +11,11 @@ export const requestLogger = (req, res, next) => {
     const duration = Date.now() - start;
     const logData = {
       method: req.method,
-      url: req.originalUrl,
+      url: sanitizeValue(req.originalUrl),
       status: res.statusCode,
       duration: `${duration}ms`,
       ip: req.ip,
-      userAgent: req.get('user-agent')
+      userAgent: sanitizeValue(req.get('user-agent'))
     };
 
     if (res.statusCode >= 500) {

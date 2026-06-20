@@ -130,20 +130,18 @@ test("sanitizeValue - handles empty objects and arrays", () => {
 });
 
 test("setupGlobalLogSanitizer - patches console methods", () => {
-  const originalLog = console.log;
-  const originalInfo = console.info;
-  const originalWarn = console.warn;
-  const originalError = console.error;
+  const originals = { log: console.log, info: console.info, warn: console.warn, error: console.error };
 
   setupGlobalLogSanitizer();
 
-  assert.notEqual(console.log, originalLog);
-  assert.notEqual(console.info, originalInfo);
-  assert.notEqual(console.warn, originalWarn);
-  assert.notEqual(console.error, originalError);
+  assert.notEqual(console.log, originals.log);
+  assert.notEqual(console.info, originals.info);
+  assert.notEqual(console.warn, originals.warn);
+  assert.notEqual(console.error, originals.error);
 
-  console.log = originalLog;
-  console.info = originalInfo;
-  console.warn = originalWarn;
-  console.error = originalError;
+  // Restore originals to avoid polluting global state for subsequent tests
+  console.log = originals.log;
+  console.info = originals.info;
+  console.warn = originals.warn;
+  console.error = originals.error;
 });

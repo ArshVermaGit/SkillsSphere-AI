@@ -603,6 +603,7 @@ export const optInTutorTracking = asyncHandler(async (req, res) => {
 export const getTrackedRoadmaps = asyncHandler(async (req, res) => {
   const roadmaps = await LearningProgress.find({ recruitersTracking: req.user._id })
     .populate("user", "name email role")
+    .limit(50)
     .lean();
 
   res.status(200).json({

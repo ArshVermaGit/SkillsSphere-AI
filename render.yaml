@@ -6,7 +6,7 @@ services:
     dockerfilePath: ./server/Dockerfile
     region: ohio
     plan: free
-    healthCheckPath: /
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production

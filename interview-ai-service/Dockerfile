@@ -18,8 +18,8 @@ RUN python -m spacy download en_core_web_sm
 # Set working directory to the service folder so uvicorn finds main:app
 WORKDIR /app/interview-ai-service
 
-# Render assigns PORT dynamically; use shell form to expand $PORT
-EXPOSE ${PORT:-8000}
+# Hugging Face Spaces mandates port 7860
+EXPOSE 7860
 
-# Run the service via uvicorn with dynamic PORT
-CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# Run the service via uvicorn on port 7860
+CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port 7860"]

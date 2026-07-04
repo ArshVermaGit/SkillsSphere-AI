@@ -42,19 +42,6 @@ services:
       - key: GEMINI_API_KEY
         sync: false
 
-  - type: web
-    name: skillssphere-interview-ai
-    env: docker
-    dockerContext: .
-    dockerfilePath: ./interview-ai-service/Dockerfile
-    region: ohio
-    plan: free
-    envVars:
-      - key: PORT
-        value: "8000"
-      - key: WHISPER_MODEL_SIZE
-        value: "base"
-
   - type: redis
     name: skillssphere-redis
     region: ohio

@@ -206,9 +206,9 @@ Access the applications:
 
 To stop the containers, press `Ctrl+C` or run `docker-compose down`.
 
-## 🚀 Deployment (Railway)
+## 🚀 Deployment (Vercel + Render)
 
-For production deployment instructions, please see the [Railway Deployment Guide](./DEPLOYMENT.md).
+For production deployment instructions using our hybrid strategy (Frontend on Vercel, Backend and AI on Render), please see the [Deployment Guide](./DEPLOYMENT.md).
 
 
 ## Scalable Folder Structure

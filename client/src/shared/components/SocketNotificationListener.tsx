@@ -107,7 +107,7 @@ const SocketNotificationListener = () => {
 
     const handleDisconnect = (reason) => {
       if (reason !== "io client disconnect") {
-        dispatch(setSocketStatus("reconnecting"));
+        dispatch(setSocketStatus("disconnected"));
       }
     };
 

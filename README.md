@@ -210,7 +210,6 @@ To stop the containers, press `Ctrl+C` or run `docker-compose down`.
 
 For production deployment instructions using our hybrid strategy (Frontend on Vercel, Backend and AI on Render), please see the [Deployment Guide](./DEPLOYMENT.md).
 
-
 ## Scalable Folder Structure
 
 The following structure keeps the project modular and easy to scale for new contributors:

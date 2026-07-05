@@ -84,7 +84,6 @@ function App() {
       <CommandPalette />
 
       <ErrorBoundary>
-        {/* @ts-expect-error TODO: Fix pervasive types */}
         <Suspense fallback={<LoadingState title="Loading module..." />}>
       <Routes>
         <Route path="/" element={<LandingPage />} />

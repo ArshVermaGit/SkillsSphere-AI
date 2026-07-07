@@ -86,3 +86,10 @@ export const getBookmarkedQuestions = async () => {
     token: getToken(),
   });
 };
+
+export const getLearningPlan = async (sessionId: string) => {
+  return apiRequest(`/api/interviews/${sessionId}/recommend-learning`, {
+    method: "GET",
+    token: getToken(),
+  });
+};

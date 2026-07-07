@@ -276,6 +276,47 @@ export const evaluateAnswer = async (
 };
 
 /**
+ * Fetch personalized learning recommendations from the AI service based on weak concepts.
+ *
+ * @param {string[]} weak_concepts - Array of weak concepts identified in the interview.
+ * @param {string} topic - The topic of the interview.
+ * @returns {Promise<object>} The personalized learning plan.
+ */
+export const getLearningRecommendations = async (weak_concepts, topic) => {
+  const available = await isServiceAvailable();
+
+  if (!available) {
+    logger.warn(
+      "[aiInterviewService] ⚠️ Python service unavailable, returning mock learning recommendations"
+    );
+    return {
+      plan: weak_concepts.map(concept => ({
+        concept,
+        explanation: "AI service unavailable. Keep practicing this concept.",
+        resources: []
+      }))
+    };
+  }
+
+  try {
+    const res = await fetchWithRetry(
+      "/api/recommend-learning",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weak_concepts, topic }),
+      },
+      20000 // Generating a learning plan can take some time
+    );
+
+    return res.json();
+  } catch (err) {
+    logger.error(`[aiInterviewService] ⚠️ Learning recommendations failed: ${err.message}`);
+    throw err;
+  }
+};
+
+/**
  * Get the current connection status of the Python AI service.
  * Useful for health check endpoints and debugging.
  *

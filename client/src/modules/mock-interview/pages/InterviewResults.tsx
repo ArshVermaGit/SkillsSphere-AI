@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { getResults, toggleQuestionBookmark } from "../services/interviewService";
+import { getResults, toggleQuestionBookmark, getLearningPlan } from "../services/interviewService";
 import InterviewResultsSkeleton from "../components/InterviewResultsSkeleton";
 import { analyzeText } from "../utils/sentiment";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
@@ -42,12 +42,24 @@ const InterviewResults = () => {
   const [bookmarkError, setBookmarkError] = useState(null);
   const [bookmarkingQuestionId, setBookmarkingQuestionId] = useState(null);
   const [expandedCards, setExpandedCards] = useState({});
+  const [learningPlan, setLearningPlan] = useState(null);
+  const [loadingPlan, setLoadingPlan] = useState(false);
 
   useEffect(() => {
     const fetchResults = async () => {
       try {
         const res = await getResults(sessionId);
         setResults(res.data);
+        if (res.data?.weakConcepts?.length > 0) {
+          setLoadingPlan(true);
+          getLearningPlan(sessionId!).then(planRes => {
+            setLearningPlan(planRes.data?.plan || []);
+          }).catch(err => {
+            logger.error("[InterviewResults] Error fetching learning plan:", err);
+          }).finally(() => {
+            setLoadingPlan(false);
+          });
+        }
       } catch (err: any) {
         setError("Failed to load results.");
         logger.error("[InterviewResults] Error:", err);
@@ -352,21 +364,49 @@ const InterviewResults = () => {
       )}
 
       {results.weakConcepts?.length > 0 && (
-        <div className="bg-amber-50 dark:bg-surface border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 dark:shadow-none animate-[fadeInUp_0.6s_ease-out]">
+        <div className="bg-amber-50 dark:bg-surface border border-amber-200 dark:border-amber-500/20 rounded-3xl p-8 mt-6 dark:shadow-none animate-[fadeInUp_0.6s_ease-out]">
           <h3 className="text-lg font-bold mb-4 text-text-main flex items-center gap-2">
             <AlertTriangle
               size={20}
               className="text-amber-500"
             />
-            Concepts to Review
+            Personalized Learning Plan
           </h3>
-          <div className="flex flex-wrap gap-2">
-            {results.weakConcepts.map((c, i) => (
-              <span key={i} className="py-1.5 px-3 rounded-full text-xs font-semibold bg-red-500/15 text-red-400">
-                {c}
-              </span>
-            ))}
-          </div>
+          
+          {loadingPlan ? (
+            <div className="flex flex-col items-center justify-center p-6 gap-3">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+              <p className="text-sm text-text-muted font-medium">Generating personalized RAG learning plan...</p>
+            </div>
+          ) : learningPlan && learningPlan.length > 0 ? (
+            <div className="space-y-4">
+              {learningPlan.map((item: any, i: number) => (
+                <div key={i} className="bg-white dark:bg-slate-900 border border-amber-100 dark:border-amber-500/10 rounded-2xl p-5 shadow-sm">
+                  <h4 className="font-bold text-amber-600 dark:text-amber-400 text-base mb-2">{item.concept}</h4>
+                  <p className="text-sm text-text-muted leading-relaxed mb-4">{item.explanation}</p>
+                  
+                  {item.resources && item.resources.length > 0 && (
+                    <div>
+                      <span className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Recommended Study:</span>
+                      <ul className="list-disc list-inside space-y-1">
+                        {item.resources.map((res: string, j: number) => (
+                          <li key={j} className="text-sm text-text-main">{res}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {results.weakConcepts.map((c: string, i: number) => (
+                <span key={i} className="py-1.5 px-3 rounded-full text-xs font-semibold bg-red-500/15 text-red-400">
+                  {c}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

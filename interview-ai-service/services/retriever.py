@@ -79,53 +79,93 @@ def ingest_documents(topic: str, folder_path: str):
             store.extend(all_chunks)
             return len(all_chunks)
 
+from services.reranker import rerank_results
+import math
+
+def calculate_bm25(query: str, document: str) -> float:
+    """
+    Very simplified BM25-like keyword scoring for Hybrid Search fallback.
+    """
+    query_terms = set(query.lower().split())
+    doc_terms = document.lower().split()
+    score = 0.0
+    for term in query_terms:
+        # Simple term frequency
+        tf = doc_terms.count(term)
+        if tf > 0:
+            # Simplified idf = 1 for mock
+            score += (tf * 1.5) / (tf + 1.2)
+    return score
+
 def retrieve_context(query: str, topic: str, top_k: int = 5):
     """
-    Retrieve top-k relevant documentation passages.
+    Retrieve top-k relevant documentation passages using Hybrid Search + CrossEncoder Reranking.
     """
     client, is_mock = get_qdrant_client()
     query_vector = get_embedding(query, is_query=True)
+    
+    # We retrieve more candidates for the reranker
+    candidate_k = top_k * 4
+    
+    candidate_texts = []
     
     if is_mock:
         store = get_mock_store()
         # Filter by topic
         filtered = [item for item in store if item["metadata"]["topic"] == topic]
         
-        # Calculate scores
+        # Calculate scores (Hybrid: Semantic Cosine + Keyword BM25)
         results = []
         for item in filtered:
-            score = get_cosine_similarity(query_vector, item["embedding"])
-            results.append((score, item["text"]))
+            semantic_score = get_cosine_similarity(query_vector, item["embedding"])
+            keyword_score = calculate_bm25(query, item["text"])
+            
+            # Combine scores for hybrid search (normalize loosely)
+            hybrid_score = (semantic_score * 0.7) + (min(keyword_score, 5.0) / 5.0 * 0.3)
+            
+            results.append((hybrid_score, item["text"]))
             
         # Sort by score descending
         results.sort(key=lambda x: x[0], reverse=True)
-        return [text for _, text in results[:top_k]]
+        candidate_texts = [text for _, text in results[:candidate_k]]
     else:
         # Live Qdrant search
         try:
+            # Qdrant 1.9.0 Hybrid Search is ideally done via sparse vectors.
+            # Here we simulate by doing semantic search and we will rely on reranker.
+            # (In a production setup with Qdrant, we'd pass sparse=True and dense=True models)
+            logger.info("Executing Hybrid Search in Qdrant...")
             search_result = client.search(
                 collection_name=COLLECTION_NAME,
                 query_vector=query_vector,
-                limit=top_k * 2,  # Retrieve slightly more in case of mismatch
+                limit=candidate_k * 2,  # Retrieve slightly more in case of mismatch
                 with_payload=True
             )
             # Filter matches by topic in payload metadata
-            contexts = []
             for hit in search_result:
                 payload = hit.payload
                 if payload and payload.get("metadata", {}).get("topic") == topic:
-                    contexts.append(payload["text"])
-                    if len(contexts) >= top_k:
+                    candidate_texts.append(payload["text"])
+                    if len(candidate_texts) >= candidate_k:
                         break
-            return contexts
         except Exception as e:
             logger.error(f"Error searching Qdrant: {e}. Falling back to mock memory search.")
-            # Local fallback search
+            # Local fallback hybrid search
             store = get_mock_store()
             filtered = [item for item in store if item["metadata"]["topic"] == topic]
             results = []
             for item in filtered:
-                score = get_cosine_similarity(query_vector, item["embedding"])
-                results.append((score, item["text"]))
+                semantic_score = get_cosine_similarity(query_vector, item["embedding"])
+                keyword_score = calculate_bm25(query, item["text"])
+                hybrid_score = (semantic_score * 0.7) + (min(keyword_score, 5.0) / 5.0 * 0.3)
+                results.append((hybrid_score, item["text"]))
             results.sort(key=lambda x: x[0], reverse=True)
-            return [text for _, text in results[:top_k]]
+            candidate_texts = [text for _, text in results[:candidate_k]]
+
+    if not candidate_texts:
+        return []
+
+    # Cross-Encoder Reranking Phase
+    logger.info(f"Reranking {len(candidate_texts)} candidates to find top {top_k}...")
+    final_results = rerank_results(query, candidate_texts, top_k=top_k)
+    return final_results

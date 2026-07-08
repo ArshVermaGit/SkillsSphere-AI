@@ -26,6 +26,14 @@ const TRANSCRIBE_TIMEOUT = parseInt(
 );
 const MAX_RETRIES = 3;
 
+export class AITimeoutError extends Error {
+  constructor(message, fallbackData) {
+    super(message);
+    this.name = 'AITimeoutError';
+    this.fallbackData = fallbackData;
+  }
+}
+
 /**
  * Sleep for a given number of milliseconds.
  * Used for exponential backoff between retries.
@@ -311,6 +319,21 @@ export const getLearningRecommendations = async (weak_concepts, topic) => {
 
     return res.json();
   } catch (err) {
+    if (
+      err.message.includes("ECONN") || 
+      err.message.includes("timed out") || 
+      err.name === "AbortError" || 
+      err.message.includes("504")
+    ) {
+      const error = new AITimeoutError("AI service timed out while generating learning plan", {
+        plan: weak_concepts.map(c => ({
+          concept: c,
+          explanation: `High traffic: AI service took too long. Please review standard documentation for ${c}.`,
+          resources: []
+        }))
+      });
+      throw error;
+    }
     logger.error(`[aiInterviewService] ⚠️ Learning recommendations failed: ${err.message}`);
     throw err;
   }
@@ -351,6 +374,29 @@ export const generateQuestions = async (topic, difficulty, previously_asked_ques
 
     return res.json();
   } catch (err) {
+    if (
+      err.message.includes("ECONN") || 
+      err.message.includes("timed out") || 
+      err.name === "AbortError" || 
+      err.message.includes("504")
+    ) {
+       const error = new AITimeoutError("AI service timed out while generating questions", {
+         questions: [
+           {
+             questionText: `Can you explain a core concept of ${topic}?`,
+             expectedAnswer: "Provide a clear and concise explanation covering the fundamentals.",
+             expectedConcepts: [topic.toLowerCase()]
+           },
+           {
+             questionText: `What are some common challenges or best practices when working with ${topic}?`,
+             expectedAnswer: "Discuss real-world scenarios, performance considerations, or architectural patterns.",
+             expectedConcepts: ["best-practices", "problem-solving"]
+           }
+         ],
+         isFallback: true
+       });
+       throw error;
+    }
     logger.error(`[aiInterviewService] ⚠️ Question generation failed: ${err.message}`);
     throw err;
   }

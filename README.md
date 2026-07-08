@@ -199,6 +199,19 @@ Access the applications:
 - **Server**: [http://localhost:5000](http://localhost:5000)
 - **AI Microservice**: [http://localhost:8000](http://localhost:8000)
 
+### 4. Seed the Vector Database (RAG)
+
+Once the containers are running, you must ingest the learning materials into the local Qdrant database to enable the AI Mock Interview system:
+
+```bash
+# If using Docker
+docker-compose exec interview-ai-service python rag/ingestion.py
+
+# If running the Python service locally outside Docker
+cd interview-ai-service
+python rag/ingestion.py
+```
+
 To stop the containers, press `Ctrl+C` or run `docker-compose down`.
 
 ## 🚀 Deployment (Vercel + Render)

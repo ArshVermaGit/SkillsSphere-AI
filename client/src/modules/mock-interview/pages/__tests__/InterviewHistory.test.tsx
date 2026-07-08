@@ -196,7 +196,7 @@ describe("InterviewHistory export", () => {
     setReduxState({
       sessions: mockSessions, pagination: { page: 1, pages: 2, total: 2 }
     });
-    getHistory
+    (getHistory as any)
       .mockResolvedValueOnce({
         data: mockSessions, totalDocuments: 2, totalPages: 2, currentPage: 1, analytics: null
       })

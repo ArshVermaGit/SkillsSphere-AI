@@ -137,50 +137,70 @@ const mockEvaluate = (transcript, expectedAnswer, expectedConcepts) => {
   const transcriptLower = transcript.toLowerCase();
   const expectedLower = expectedAnswer.toLowerCase();
 
-  // Simple keyword overlap for technical score
-  const expectedWords = expectedLower.split(/\s+/).filter((w) => w.length > 3);
-  const matchedWords = expectedWords.filter((w) => {
-    const regex = new RegExp(`\\b${w}\\b`, "i");
-    return regex.test(transcriptLower);
-  });
-  const technical = Math.min(
-    100,
-    Math.round((matchedWords.length / Math.max(expectedWords.length, 1)) * 100)
-  );
+  // Robust tokenization ignoring punctuation
+  const tokenize = (text) => text.split(/[\s,.-]+/).filter((w) => w.length > 2);
+  const transTokens = tokenize(transcriptLower);
+  const expTokens = tokenize(expectedLower);
 
-  // Concept detection via keyword matching
+  // Calculate Jaccard Similarity for technical score
+  const transSet = new Set(transTokens);
+  const expSet = new Set(expTokens);
+  let intersection = 0;
+  for (const token of expSet) {
+    if (transSet.has(token)) intersection++;
+  }
+  const union = new Set([...transSet, ...expSet]).size;
+  
+  // Base technical score on Jaccard similarity, scaled up for leniency since expected answers can be short
+  const jaccardScore = union === 0 ? 0 : (intersection / union) * 100;
+  const technical = Math.min(100, Math.round(jaccardScore * 2 + 20));
+
+  // Dynamic Concept detection using substring matching for better accuracy
   const detected = expectedConcepts.filter((c) => {
     const conceptStr = c.replace(/-/g, " ").toLowerCase();
-    const regex = new RegExp(`\\b${conceptStr}\\b`, "i");
-    return regex.test(transcriptLower);
+    return transcriptLower.includes(conceptStr);
   });
   const missed = expectedConcepts.filter((c) => !detected.includes(c));
-  const relevance = Math.round(
-    (detected.length / Math.max(expectedConcepts.length, 1)) * 100
+  const relevance = expectedConcepts.length === 0 ? 100 : Math.round(
+    (detected.length / expectedConcepts.length) * 100
   );
 
-  // Basic communication score based on answer length
-  const wordCount = transcript.split(/\s+/).length;
-  let communication = 50;
-  if (wordCount > 20 && wordCount < 300) communication = 70;
-  if (wordCount > 50 && wordCount < 200) communication = 85;
+  // Dynamic communication score based on transcript density
+  const wordCount = transTokens.length;
+  let communication = 70;
+  if (wordCount < 10) communication = 30;
+  else if (wordCount >= 10 && wordCount < 50) communication = 60;
+  else if (wordCount >= 50 && wordCount < 250) communication = 90;
+  else if (wordCount >= 250) communication = 75; // Slight penalty for rambling
 
-  // Count filler words
+  // Expanded dynamic filler words set
   const fillers = [
-    "um", "uh", "like", "you know", "basically", "actually", "so yeah",
+    "um", "uh", "like", "you know", "basically", "actually", "so yeah", 
+    "literally", "i mean", "right", "stuff", "things"
   ];
   const fillerCount = fillers.reduce((count, filler) => {
     const regex = new RegExp(`\\b${filler}\\b`, "gi");
     return count + (transcriptLower.match(regex) || []).length;
   }, 0);
 
+  // Penalize communication proportionally based on filler ratio rather than static subtraction
+  const fillerRatio = wordCount === 0 ? 0 : fillerCount / wordCount;
+  communication = Math.max(0, Math.round(communication - (fillerRatio * 100)));
+
+  // Dynamic speaking speed estimation
+  let speakingSpeed = "normal";
+  if (wordCount > 0) {
+    if (wordCount < 40) speakingSpeed = "slow";
+    else if (wordCount > 180) speakingSpeed = "fast";
+  }
+
   return {
     technical,
-    communication: Math.max(0, communication - fillerCount * 5),
+    communication,
     relevance,
     concepts: { detected, missed },
     fillerWords: fillerCount,
-    speakingSpeed: wordCount < 30 ? "slow" : wordCount > 150 ? "fast" : "normal",
+    speakingSpeed,
     _mock: true,
   };
 };

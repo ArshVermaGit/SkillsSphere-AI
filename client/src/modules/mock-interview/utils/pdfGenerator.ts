@@ -18,9 +18,9 @@ export const generatePDFReport = async (elementId: string, filename: string = 'i
   const opt = {
     margin:       10, // top, left, bottom, right in mm
     filename:     filename,
-    image:        { type: 'jpeg' as 'jpeg', quality: 0.98 },
+    image:        { type: 'jpeg' as const, quality: 0.98 },
     html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#09090b' },
-    jsPDF:        { unit: 'mm' as 'mm', format: 'a4' as 'a4', orientation: 'portrait' as 'portrait' }
+    jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
   };
 
   // Add a temporary class to format it for PDF if needed

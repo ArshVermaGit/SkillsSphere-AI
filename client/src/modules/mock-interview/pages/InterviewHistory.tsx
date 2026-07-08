@@ -475,7 +475,7 @@ const InterviewHistory = () => {
   const getExportSessions = async () => {
     if (pagination.total > sessions.length) {
       const res = await getHistory(1, pagination.total);
-      return res.data?.sessions || sessions;
+      return res.data || sessions;
     }
 
     return sessions;

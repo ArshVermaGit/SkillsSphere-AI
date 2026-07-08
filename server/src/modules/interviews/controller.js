@@ -11,6 +11,7 @@ import {
   addTutorFeedback,
   updateQuestionBookmark,
   getBookmarkedQuestions,
+  generateSessionPdf,
 } from "./service.js";
 import { getServiceStatus } from "../../integrations/aiInterviewService.js";
 import asyncHandler from "../../utils/asyncHandler.js";
@@ -292,4 +293,20 @@ export const deleteInterviewSession = asyncHandler(async (req, res) => {
     success: true,
     message: "Interview session deleted successfully",
   });
+});
+
+/**
+ * @desc    Export interview session results as a PDF
+ * @route   GET /api/interviews/sessions/:id/export
+ * @access  Private (session owner only)
+ */
+export const exportSessionPdf = asyncHandler(async (req, res) => {
+  const pdfBuffer = await generateSessionPdf(req.params.id, req.user._id);
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="interview-report-${req.params.id}.pdf"`
+  );
+  res.send(pdfBuffer);
 });

@@ -61,6 +61,8 @@ export const getResults = async (sessionId) => {
 };
 
 export interface InterviewHistoryResponse {
+  success?: boolean;
+  error?: string;
   data: any[];
   analytics: any;
   totalDocuments: number;

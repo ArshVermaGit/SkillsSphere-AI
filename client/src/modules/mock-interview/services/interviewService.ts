@@ -95,6 +95,13 @@ export const getBookmarkedQuestions = async () => {
   });
 };
 
+export const getLearningPlan = async (sessionId: string) => {
+  return apiRequest(`/api/interviews/${sessionId}/recommend-learning`, {
+    method: "GET",
+    token: getToken(),
+  });
+};
+
 export const getInterviewAnalytics = async () => {
   return apiRequest("/api/analytics/interview-dashboard", {
     method: "GET",

@@ -14,8 +14,8 @@ export const generatePDFReport = async (elementId: string, filename: string): Pr
     throw new Error(`Element with ID '${elementId}' not found`);
   }
 
-  const opt = {
-    margin: [10, 10, 10, 10] as [number, number, number, number],
+  const opt: any = {
+    margin: [10, 10, 10, 10],
     filename: filename,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { 

@@ -129,7 +129,11 @@ export const getInterviewHistory = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    data: history,
+    data: history.sessions || history,
+    analytics: history.analytics || {},
+    totalDocuments: history.pagination?.total || 0,
+    totalPages: history.pagination?.pages || 1,
+    currentPage: history.pagination?.page || page,
   });
 });
 

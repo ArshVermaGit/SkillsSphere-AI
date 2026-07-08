@@ -1,35 +1,37 @@
-import html2pdf from 'html2pdf.js';
+import html2pdf from "html2pdf.js";
+import logger from "../../../utils/logger";
 
 /**
- * Utility to generate and download a PDF report from a DOM element.
- * 
- * @param elementId The ID of the DOM element to convert to PDF.
- * @param filename The desired filename for the downloaded PDF.
+ * Generates a PDF report from an HTML element
+ * @param elementId The ID of the HTML element to render
+ * @param filename The name of the output PDF file
  */
-export const generatePDFReport = async (elementId: string, filename: string = 'interview-report.pdf') => {
+export const generatePDFReport = async (elementId: string, filename: string): Promise<void> => {
   const element = document.getElementById(elementId);
   
   if (!element) {
-    console.error(`Element with id ${elementId} not found.`);
-    throw new Error('Could not generate PDF: Report element not found');
+    logger.error(`[pdfGenerator] Element with ID '${elementId}' not found in the DOM.`);
+    throw new Error(`Element with ID '${elementId}' not found`);
   }
 
-  // Configuration for html2pdf
-  const opt = {
-    margin:       10, // top, left, bottom, right in mm
-    filename:     filename,
-    image:        { type: 'jpeg' as const, quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true, logging: false, backgroundColor: '#09090b' },
-    jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+  const opt: any = {
+    margin: [10, 10, 10, 10],
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { 
+      scale: 2, 
+      useCORS: true,
+      logging: false,
+      windowWidth: 800 // Matches the w-[800px] class on the target element
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
   };
-
-  // Add a temporary class to format it for PDF if needed
-  element.classList.add('pdf-export-mode');
 
   try {
     await html2pdf().set(opt).from(element).save();
-  } finally {
-    // Remove the class after export
-    element.classList.remove('pdf-export-mode');
+    logger.info(`[pdfGenerator] Successfully generated ${filename}`);
+  } catch (error) {
+    logger.error("[pdfGenerator] Failed to generate PDF", error);
+    throw error;
   }
 };

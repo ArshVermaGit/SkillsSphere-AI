@@ -461,4 +461,24 @@ router.patch("/:id/questions/:questionId/bookmark", validateBody(bookmarkQuestio
  */
 router.get("/:id/results", getSessionResults);
 
+/**
+ * @openapi
+ * /api/interviews/{id}/recommend-learning:
+ *   get:
+ *     summary: Get personalized learning plan based on weak concepts
+ *     tags: [Interviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Learning plan retrieved
+ */
+router.get("/:id/recommend-learning", getLearningPlan);
+
 export default router;

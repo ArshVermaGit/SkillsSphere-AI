@@ -26,31 +26,56 @@ import { safeDeletePhysicalFile } from "../../utils/fileUtils.js";
 export const startInterview = asyncHandler(async (req, res) => {
   const { topic, difficulty, persona } = req.body;
 
-  const session = await createSession({
-    userId: req.user._id,
-    topic,
-    difficulty: difficulty || "medium",
-    persona: persona || "friendly",
-  });
+  try {
+    const session = await createSession({
+      userId: req.user._id,
+      topic,
+      difficulty: difficulty || "medium",
+      persona: persona || "friendly",
+    });
 
-  res.status(201).json({
-    success: true,
-    message: "Interview session started",
-    data: {
-      sessionId: session._id,
-      topic: session.topic,
-      difficulty: session.difficulty,
-      totalQuestions: session.totalQuestions,
-      currentQuestion: session.answers[0]
-        ? {
-            index: 0,
-            questionText: session.answers[0].questionText,
-            questionId: session.answers[0].questionId,
-            bookmarked: Boolean(session.answers[0].bookmarked),
-          }
-        : null,
-    },
-  });
+    res.status(201).json({
+      success: true,
+      message: "Interview session started",
+      data: {
+        sessionId: session._id,
+        topic: session.topic,
+        difficulty: session.difficulty,
+        totalQuestions: session.totalQuestions,
+        currentQuestion: session.answers[0]
+          ? {
+              index: 0,
+              questionText: session.answers[0].questionText,
+              questionId: session.answers[0].questionId,
+              bookmarked: Boolean(session.answers[0].bookmarked),
+            }
+          : null,
+      },
+    });
+  } catch (err) {
+    if (err.name === "AITimeoutError" && err.session) {
+      return res.status(206).json({
+        success: true,
+        message: "High traffic: generating fallback questions...",
+        isFallback: true,
+        data: {
+          sessionId: err.session._id,
+          topic: err.session.topic,
+          difficulty: err.session.difficulty,
+          totalQuestions: err.session.totalQuestions,
+          currentQuestion: err.session.answers[0]
+            ? {
+                index: 0,
+                questionText: err.session.answers[0].questionText,
+                questionId: err.session.answers[0].questionId,
+                bookmarked: Boolean(err.session.answers[0].bookmarked),
+              }
+            : null,
+        },
+      });
+    }
+    throw err;
+  }
 });
 
 /**
@@ -338,11 +363,23 @@ export const getLearningPlan = asyncHandler(async (req, res) => {
     });
   }
 
-  const { getLearningRecommendations } = await import("../../integrations/aiInterviewService.js");
-  const recommendations = await getLearningRecommendations(weakConcepts.slice(0, 5), session.topic);
+  try {
+    const { getLearningRecommendations } = await import("../../integrations/aiInterviewService.js");
+    const recommendations = await getLearningRecommendations(weakConcepts.slice(0, 5), session.topic);
 
-  res.status(200).json({
-    status: "success",
-    data: recommendations
-  });
+    res.status(200).json({
+      status: "success",
+      data: recommendations
+    });
+  } catch (err) {
+    if (err.name === "AITimeoutError") {
+      return res.status(206).json({
+        status: "partial_content",
+        message: "High traffic: generating fallback learning plan...",
+        isFallback: true,
+        data: err.fallbackData
+      });
+    }
+    throw err;
+  }
 });

@@ -90,11 +90,16 @@ export const createSession = async ({ userId, topic, difficulty, persona }) => {
     .filter(Boolean);
 
   let generatedQuestions = [];
+  let aiTimeoutError = null;
   try {
     const aiResponse = await generateQuestions(topic, difficulty, previouslyAsked);
     generatedQuestions = aiResponse.questions || [];
   } catch (error) {
     logger.warn(`Failed to dynamically generate questions: ${error.message}. Falling back to question bank.`);
+    if (error.name === "AITimeoutError") {
+      aiTimeoutError = error;
+      generatedQuestions = error.fallbackData?.questions || [];
+    }
   }
 
   let questions = [];
@@ -134,6 +139,11 @@ export const createSession = async ({ userId, topic, difficulty, persona }) => {
     startedAt: new Date(),
     ...(persona && { persona }),
   });
+
+  if (aiTimeoutError) {
+    aiTimeoutError.session = session;
+    throw aiTimeoutError;
+  }
 
   return session;
 };
@@ -268,9 +278,7 @@ export const processAnswerSubmission = async ({
     const nextAudioPath = audioFile?.path || null;
 
     if (audioFile) {
-if (audioFile) {
-        session.answers[currentIndex].audioPath = nextAudioPath;
-      }
+      session.answers[currentIndex].audioPath = nextAudioPath;
     }
 
     // Move to next question

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import Navbar from "../../../shared/components/Navbar";
 import Footer from "../../../shared/components/Footer";
-import { exportToPDF } from "../../../utils/exportUtils";
+import { generatePDFReport } from "../utils/pdfGenerator";
 
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import logger from "../../../utils/logger";
@@ -125,9 +125,7 @@ const InterviewResults = () => {
   const handleExportPDF = async () => {
     try {
       const filename = `Interview_Report_${results?.topic?.replace(/[^a-z0-9]/gi, '_') || 'Session'}.pdf`;
-      await exportToPDF("mock-interview-pdf-target", filename, {
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#09090b' }
-      });
+      await generatePDFReport("mock-interview-pdf-target", filename);
     } catch (err: any) {
       logger.error("[InterviewResults] PDF export failed:", err);
     }

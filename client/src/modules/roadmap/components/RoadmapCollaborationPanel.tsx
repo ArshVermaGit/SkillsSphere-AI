@@ -53,6 +53,7 @@ export default function RoadmapCollaborationPanel({
 
     const token = getToken();
     const newSocket = io(SOCKET_URL, {
+      forceNew: true,
       auth: { token },
       transports: ["websocket"],
     });
@@ -82,6 +83,7 @@ export default function RoadmapCollaborationPanel({
 
     return () => {
       newSocket.emit("leave-roadmap", { roadmapId });
+      newSocket.off();
       newSocket.close();
     };
   }, [isOpen, roadmapId, selectedMilestoneId, currentUser]);

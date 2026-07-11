@@ -85,7 +85,7 @@ export default function ClassroomRoom() {
         if (!mounted) return;
         
         // Initialize Socket
-        const s = io(SOCKET_URL, { auth: { token } });
+        const s = io(SOCKET_URL, { forceNew: true, auth: { token } });
         setSocket(s);
         // @ts-expect-error TODO: Fix pervasive types
         socketRef.current = s;
@@ -304,7 +304,10 @@ export default function ClassroomRoom() {
       mounted = false;
       dispatch(clearClassroomsError());
       // @ts-expect-error TODO: Fix pervasive types
-      if (s) s.disconnect();
+      if (s) {
+        s.off();
+        s.disconnect();
+      }
       if (localStreamRef.current) {
         // @ts-expect-error TODO: Fix pervasive types
         localStreamRef.current.getTracks().forEach((t) => t.stop());

@@ -25,17 +25,17 @@ const SocketNotificationListener = () => {
 
   const toastRef = useRef(toast);
   const processedNotifs = useRef(new Set());
+  const userId = user?._id || user?.id;
 
   useEffect(() => {
     toastRef.current = toast;
   }, [toast]);
 
   useEffect(() => {
-    const userId = user?._id || user?.id;
-
     if (!token || !userId) {
       if (socketRef.current) {
         dispatch(setSocketStatus("idle"));
+        socketRef.current.off();
         socketRef.current.disconnect();
         socketRef.current = null;
       }
@@ -43,6 +43,7 @@ const SocketNotificationListener = () => {
     }
 
     socketRef.current = io(SOCKET_URL, {
+      forceNew: true,
       transports: ["websocket"],
       path: "/socket.io",
       auth: { token },
@@ -137,11 +138,12 @@ const SocketNotificationListener = () => {
       socket.off("dashboard-refresh", handleDashboardRefresh);
       socket.off("disconnect", handleDisconnect);
       socket.off("connect_error", handleConnectError);
+      socket.off();
       dispatch(setSocketStatus("idle"));
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user, token, dispatch]);
+  }, [userId, token, dispatch]);
 
   return null;
 };

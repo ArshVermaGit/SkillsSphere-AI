@@ -60,7 +60,7 @@ describe("SocketNotificationListener", () => {
 
     unmount();
 
-    expect(socket.off).toHaveBeenCalledTimes(6);
+    expect(socket.off).toHaveBeenCalledTimes(7);
     expect(socket.disconnect).toHaveBeenCalledTimes(1);
   });
 });

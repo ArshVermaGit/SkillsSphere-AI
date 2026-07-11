@@ -1,6 +1,6 @@
 import logger from "../utils/logger.js";
 const DEFAULT_WINDOW_MS = parseInt(process.env.SOCKET_RATE_WINDOW_MS, 10) || 10000;
-const DEFAULT_MAX_EVENTS = parseInt(process.env.SOCKET_RATE_MAX_EVENTS, 10) || 50;
+const DEFAULT_MAX_EVENTS = parseInt(process.env.SOCKET_RATE_MAX_EVENTS, 10) || 100;
 const WHITELIST = new Set(
   (process.env.SOCKET_RATE_WHITELIST || "ping,pong,connect,disconnect,error")
     .split(",")

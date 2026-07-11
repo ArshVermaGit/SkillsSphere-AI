@@ -304,9 +304,9 @@ export default function ClassroomRoom() {
       mounted = false;
       dispatch(clearClassroomsError());
       // @ts-expect-error TODO: Fix pervasive types
-      if (s) {
-        s.off();
-        s.disconnect();
+      if (socketRef.current) {
+        socketRef.current.off();
+        socketRef.current.disconnect();
       }
       if (localStreamRef.current) {
         // @ts-expect-error TODO: Fix pervasive types

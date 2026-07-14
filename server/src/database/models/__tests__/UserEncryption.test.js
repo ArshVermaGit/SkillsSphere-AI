@@ -9,19 +9,30 @@ import Resume from "../Resume.js";
 process.env.ENCRYPTION_KEY = "fallback-test-encryption-key-32-characters";
 
 test("User/Resume Encryption & Lean Query Decryption", async (t) => {
-  // Set up in-memory mongodb connection
-  const mongoServer = await MongoMemoryServer.create({
-    instance: {
-      startupTimeout: 60000,
-    }
-  });
-  const uri = mongoServer.getUri();
+  let mongoServer;
+  let uri = process.env.MONGO_URI;
+
+  if (!uri) {
+    // Set up in-memory mongodb connection
+    mongoServer = await MongoMemoryServer.create({
+      instance: {
+        startupTimeout: 60000,
+      }
+    });
+    uri = mongoServer.getUri();
+  }
+
   await mongoose.connect(uri);
 
   // Clean up database at the end
   t.after(async () => {
+    if (mongoose.connection.readyState === 1) {
+      await mongoose.connection.db.dropDatabase();
+    }
     await mongoose.disconnect();
-    await mongoServer.stop();
+    if (mongoServer) {
+      await mongoServer.stop();
+    }
   });
 
   await t.test("User.updateMany() & User.deleteMany() transparently encrypt email in filter", async () => {

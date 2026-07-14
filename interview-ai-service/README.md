@@ -23,7 +23,6 @@ To seed the local Qdrant vector database with RAG content:
 
 ### API Setup
 
-
 ```bash
 # Navigate to the service directory
 cd interview-ai-service

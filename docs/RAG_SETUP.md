@@ -12,7 +12,8 @@ SkillSphere's AI Mock Interview engine uses RAG to fetch contextually relevant, 
 
 To ensure topic-specific isolation (so React questions don't accidentally retrieve Python answers), you **must** structure your knowledge base logically inside the `interview-ai-service/knowledge/` directory.
 
-### Example Structure:
+### Example Structure
+
 ```text
 interview-ai-service/
 └── knowledge/
@@ -61,22 +62,25 @@ Avoid massive walls of text. Smaller, focused paragraphs ensure that the embeddi
 
 Once your knowledge folders are populated, you must ingest them into your Qdrant vector database.
 
-### Prerequisites:
+### Prerequisites
 - Ensure your Docker containers are running (specifically the `qdrant` container).
+
   ```bash
   docker-compose up -d
   ```
 
-### Running the Ingestion Script:
+### Running the Ingestion Script
 
 **Option A: Using Docker (Recommended)**
 Run the ingestion script directly inside the AI service container:
+
 ```bash
 docker-compose exec interview-ai-service python rag/ingestion.py
 ```
 
 **Option B: Running Locally (Without Docker)**
 If you are developing the Python service locally on your host machine:
+
 ```bash
 cd interview-ai-service
 # Ensure your virtual environment is activated
@@ -96,7 +100,7 @@ python rag/ingestion.py
 
 ### Check Qdrant Dashboard
 If you're running the standard `docker-compose` setup, you can typically access the Qdrant Web UI at:
-- **http://localhost:6333/dashboard**
+- **<http://localhost:6333/dashboard>**
 
 ### Common Issues
 

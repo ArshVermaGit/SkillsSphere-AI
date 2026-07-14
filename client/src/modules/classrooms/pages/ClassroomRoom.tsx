@@ -64,8 +64,8 @@ export default function ClassroomRoom() {
   const [isHandRaised, setIsHandRaised] = useState(false);
 
   const peersRef = useRef([]); // To keep track of peer connections inside callbacks
-  const socketRef = useRef();
-  const localStreamRef = useRef();
+  const socketRef = useRef<any>(null);
+  const localStreamRef = useRef<any>(null);
   const screenStreamRef = useRef(null);
   const activeSocketIdsRef = useRef(new Set());
 
@@ -87,7 +87,6 @@ export default function ClassroomRoom() {
         // Initialize Socket
         const s = io(SOCKET_URL, { forceNew: true, auth: { token } });
         setSocket(s);
-        // @ts-expect-error TODO: Fix pervasive types
         socketRef.current = s;
 
         // Get media permissions
@@ -100,7 +99,6 @@ export default function ClassroomRoom() {
             }
 
             setLocalStream(stream);
-            // @ts-expect-error TODO: Fix pervasive types
             localStreamRef.current = stream;
 
             // Join room once media is acquired
@@ -303,13 +301,11 @@ export default function ClassroomRoom() {
     return () => {
       mounted = false;
       dispatch(clearClassroomsError());
-      // @ts-expect-error TODO: Fix pervasive types
       if (socketRef.current) {
         socketRef.current.off();
         socketRef.current.disconnect();
       }
       if (localStreamRef.current) {
-        // @ts-expect-error TODO: Fix pervasive types
         localStreamRef.current.getTracks().forEach((t) => t.stop());
       }
       if (screenStreamRef.current) {
@@ -328,7 +324,6 @@ export default function ClassroomRoom() {
     });
 
     peer.on("signal", (signal) => {
-      // @ts-expect-error TODO: Fix pervasive types
       socketRef.current.emit("webrtc-offer", {
         targetSocketId: userToSignal,
         callerSocketId: callerId,
@@ -418,7 +413,6 @@ export default function ClassroomRoom() {
     if (!screenStreamRef.current) return;
 
     const screenTrack = screenStreamRef.current.getVideoTracks()[0];
-    // @ts-expect-error TODO: Fix pervasive types
     const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
 
     if (screenTrack && cameraTrack) {
@@ -453,7 +447,6 @@ export default function ClassroomRoom() {
         screenStreamRef.current = stream;
 
         const screenTrack = stream.getVideoTracks()[0];
-        // @ts-expect-error TODO: Fix pervasive types
         const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
 
         screenTrack.onended = () => {
